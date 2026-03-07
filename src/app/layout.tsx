@@ -6,6 +6,7 @@ export const metadata: Metadata = {
   description:
     'BeanStrategy (BSTR) continuously accumulates BEAN through trading fees and staking yield. The first BEAN treasury reserve protocol on Base.',
   metadataBase: new URL('https://beanstrategy.com'),
+  icons: { icon: '/images/favicon.ico' },
   openGraph: {
     title: 'BeanStrategy — The BEAN Reserve Protocol',
     description: 'Continuously accumulating BEAN, powered by trading fees and high-yield staking on MineBean.',
