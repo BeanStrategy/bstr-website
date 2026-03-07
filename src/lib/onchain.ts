@@ -39,6 +39,30 @@ function hexToTokenAmount(hex: string): number {
   return whole + frac
 }
 
+const WETH_ADDRESS = '0x4200000000000000000000000000000000000006'
+
+export async function fetchNativeEthBalance(address: string): Promise<number> {
+  const res = await fetch(BASE_RPC, {
+    ...FETCH_OPTS,
+    body: JSON.stringify({
+      jsonrpc: '2.0',
+      method: 'eth_getBalance',
+      params: [address, 'latest'],
+      id: 1,
+    }),
+  })
+  if (!res.ok) throw new Error(`RPC error: ${res.status}`)
+  const json = await res.json()
+  if (json.error) throw new Error(json.error.message)
+  return hexToTokenAmount(json.result as string)
+}
+
+export async function fetchWethBalance(address: string): Promise<number> {
+  const padded = address.slice(2).padStart(64, '0')
+  const result = await ethCall(WETH_ADDRESS, `0x70a08231${padded}`)
+  return hexToTokenAmount(result)
+}
+
 export async function fetchBstrTotalSupply(bstrAddress: string): Promise<number> {
   const result = await ethCall(bstrAddress, '0x18160ddd')
   return hexToTokenAmount(result)

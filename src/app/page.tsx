@@ -4,7 +4,7 @@ import {
   fetchUserStaking,
   fetchUserHistory,
 } from '@/lib/api'
-import { fetchBstrTotalSupply, fetchBstrBurned, fetchBurnHistory } from '@/lib/onchain'
+import { fetchBstrTotalSupply, fetchBstrBurned, fetchBurnHistory, fetchNativeEthBalance, fetchWethBalance } from '@/lib/onchain'
 import { mockBurnHistory } from '@/lib/mock-data'
 import type { BurnEvent } from '@/types'
 import { formatBEAN, formatUSD, formatPercent } from '@/lib/utils'
@@ -30,6 +30,8 @@ async function getDashboardData() {
       fetchStakingGlobalStats(),
       fetchUserStaking(AGENT_ADDRESS),
       fetchUserHistory(AGENT_ADDRESS),
+      fetchNativeEthBalance(AGENT_ADDRESS),
+      fetchWethBalance(AGENT_ADDRESS),
     ])
 
     const bstr = BSTR_ADDRESS
@@ -41,7 +43,7 @@ async function getDashboardData() {
       : Promise.resolve(null)
 
     const [minebeanResults, bstrResults] = await Promise.all([minebean, bstr])
-    const [stats, stakingGlobal, userStaking, history] = minebeanResults
+    const [stats, stakingGlobal, userStaking, history, ethBal, wethBal] = minebeanResults
 
     let bstrTotalSupply = 0
     let bstrBurned = 0
@@ -60,6 +62,8 @@ async function getDashboardData() {
       stakingGlobal: stakingGlobal.status === 'fulfilled' ? stakingGlobal.value : null,
       userStaking: userStaking.status === 'fulfilled' ? userStaking.value : null,
       history: history.status === 'fulfilled' ? history.value : [],
+      ethBalance: ethBal.status === 'fulfilled' ? (ethBal.value as number) : 0,
+      wethBalance: wethBal.status === 'fulfilled' ? (wethBal.value as number) : 0,
       bstrTotalSupply,
       bstrBurned,
       burnHistory,
@@ -67,18 +71,27 @@ async function getDashboardData() {
   } catch {
     return {
       stats: null, stakingGlobal: null, userStaking: null, history: [],
+      ethBalance: 0, wethBalance: 0,
       bstrTotalSupply: 0, bstrBurned: 0, burnHistory: [] as BurnEvent[],
     }
   }
 }
 
 export default async function HomePage() {
-  const { stats, stakingGlobal, userStaking, history, bstrTotalSupply, bstrBurned, burnHistory } =
+  const { stats, stakingGlobal, userStaking, history, ethBalance, wethBalance, bstrTotalSupply, bstrBurned, burnHistory } =
     await getDashboardData()
 
   const stakedBean = parseFloat(userStaking?.balance ?? '0')
   const beanPrice = Number(stats?.beanPriceUsd ?? 0)
-  const treasuryUsd = stakedBean * beanPrice
+  const beanUsd = stakedBean * beanPrice
+  // ETH price derived from BEAN native price ratio (both quoted in ETH and USD)
+  const ethPrice = stats && stats.beanPriceNative > 0
+    ? stats.beanPriceUsd / stats.beanPriceNative
+    : 0
+  const ethUsd = ethBalance * ethPrice
+  const wethUsd = wethBalance * ethPrice
+  const totalTreasuryUsd = beanUsd + ethUsd + wethUsd
+  const treasuryUsd = beanUsd // keep for legacy references
   const apr = Number(stakingGlobal?.apr ?? 0)
 
   const bstrCirculating = bstrTotalSupply > 0 ? bstrTotalSupply - bstrBurned : 0
@@ -126,6 +139,27 @@ export default async function HomePage() {
               </span>
             </p>
           )}
+        </div>
+
+        {/* Total treasury breakdown */}
+        <div className="card p-5 mb-6 grid grid-cols-1 sm:grid-cols-3 gap-4">
+          <div>
+            <p className="text-xs text-muted mb-1">Total Treasury Value</p>
+            <p className="text-xl font-bold">{formatUSD(totalTreasuryUsd)}</p>
+            <p className="text-xs text-muted mt-0.5">All assets combined</p>
+          </div>
+          <div className="sm:border-l sm:border-border sm:pl-4">
+            <p className="text-xs text-muted mb-1">BEAN (staked)</p>
+            <p className="text-base font-semibold text-[#0052ff]">{formatUSD(beanUsd)}</p>
+            <p className="text-xs text-muted font-mono mt-0.5">{formatBEAN(stakedBean)} BEAN</p>
+          </div>
+          <div className="sm:border-l sm:border-border sm:pl-4">
+            <p className="text-xs text-muted mb-1">ETH{wethBalance > 0 ? ' + WETH' : ''} (reserve)</p>
+            <p className="text-base font-semibold">{formatUSD(ethUsd + wethUsd)}</p>
+            <p className="text-xs text-muted font-mono mt-0.5">
+              {ethBalance.toFixed(4)} ETH{wethBalance > 0 ? ` + ${wethBalance.toFixed(4)} WETH` : ''}
+            </p>
+          </div>
         </div>
 
         {/* Stat cards */}
