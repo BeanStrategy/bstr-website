@@ -25,7 +25,7 @@ export default function HowItWorks({ apr }: HowItWorksProps) {
       number: '03',
       title: aprTitle,
       description:
-        'All BEAN is staked on MineBean protocol. Staking yield compounds daily, growing the treasury and generating ETH rewards.',
+        'All BEAN is staked on MineBean protocol. BEAN staking yield compounds back into the treasury every 4 hours — growing holdings automatically. Staking also generates separate ETH rewards.',
     },
     {
       number: '04',
@@ -64,9 +64,11 @@ export default function HowItWorks({ apr }: HowItWorksProps) {
               <span className="text-[#0052ff]">→</span>
               <span className="card px-3 py-1.5">stake @ {aprLabel}</span>
               <span className="text-[#0052ff]">→</span>
-              <span className="card px-3 py-1.5">NAV rises</span>
+              <span className="card px-3 py-1.5">yield compounds</span>
               <span className="text-[#0052ff]">→</span>
-              <span className="card px-3 py-1.5">more buyers</span>
+              <span className="card px-3 py-1.5">more BEAN</span>
+              <span className="text-[#0052ff]">→</span>
+              <span className="card px-3 py-1.5">NAV rises</span>
               <span className="text-[#0052ff]">→</span>
               <span className="text-white">repeat</span>
             </div>
@@ -74,16 +76,16 @@ export default function HowItWorks({ apr }: HowItWorksProps) {
           <div>
             <p className="text-xs text-muted uppercase tracking-wide mb-2">BSTR Buyback &amp; Burn</p>
             <div className="flex flex-wrap items-center gap-2 text-sm text-muted">
-              <span className="card px-3 py-1.5">staking yield</span>
-              <span className="text-accent">→</span>
+              <span className="card px-3 py-1.5">ETH staking yield</span>
+              <span className="text-[#0052ff]">→</span>
               <span className="card px-3 py-1.5">buy BSTR</span>
-              <span className="text-accent">→</span>
+              <span className="text-[#0052ff]">→</span>
               <span className="card px-3 py-1.5">burn forever</span>
-              <span className="text-accent">→</span>
+              <span className="text-[#0052ff]">→</span>
               <span className="card px-3 py-1.5">supply ↓</span>
-              <span className="text-accent">→</span>
+              <span className="text-[#0052ff]">→</span>
               <span className="card px-3 py-1.5">NAV rises</span>
-              <span className="text-accent">→</span>
+              <span className="text-[#0052ff]">→</span>
               <span className="text-white">repeat</span>
             </div>
           </div>
