@@ -2,13 +2,13 @@ import {
   fetchBeanStats,
   fetchStakingGlobalStats,
   fetchUserStaking,
-  fetchCurrentRound,
   fetchUserHistory,
 } from '@/lib/api'
-import { fetchBstrTotalSupply, fetchBstrBurned } from '@/lib/onchain'
+import { fetchBstrTotalSupply, fetchBstrBurned, fetchBurnHistory } from '@/lib/onchain'
+import { mockBurnHistory } from '@/lib/mock-data'
+import type { BurnEvent } from '@/types'
 import { formatBEAN, formatUSD, formatPercent } from '@/lib/utils'
 import StatCard from '@/components/StatCard'
-import BeanpotCard from '@/components/BeanpotCard'
 import RecentActivity from '@/components/RecentActivity'
 import ChartWrapper from '@/components/ChartWrapper'
 import HowItWorks from '@/components/HowItWorks'
@@ -19,6 +19,7 @@ import Footer from '@/components/Footer'
 
 const AGENT_ADDRESS = process.env.NEXT_PUBLIC_AGENT_ADDRESS ?? ''
 const BSTR_ADDRESS = process.env.NEXT_PUBLIC_BSTR_ADDRESS ?? ''
+const MOCK = process.env.MOCK_DATA === 'true'
 
 export const revalidate = 60
 
@@ -28,7 +29,6 @@ async function getDashboardData() {
       fetchBeanStats(),
       fetchStakingGlobalStats(),
       fetchUserStaking(AGENT_ADDRESS),
-      fetchCurrentRound(),
       fetchUserHistory(AGENT_ADDRESS),
     ])
 
@@ -36,46 +36,50 @@ async function getDashboardData() {
       ? Promise.allSettled([
           fetchBstrTotalSupply(BSTR_ADDRESS),
           fetchBstrBurned(BSTR_ADDRESS),
+          fetchBurnHistory(BSTR_ADDRESS),
         ])
       : Promise.resolve(null)
 
     const [minebeanResults, bstrResults] = await Promise.all([minebean, bstr])
-    const [stats, stakingGlobal, userStaking, currentRound, history] = minebeanResults
+    const [stats, stakingGlobal, userStaking, history] = minebeanResults
 
     let bstrTotalSupply = 0
     let bstrBurned = 0
+    let burnHistory: BurnEvent[] = []
     if (bstrResults) {
-      const [supply, burned] = bstrResults
+      const [supply, burned, burns] = bstrResults
       if (supply.status === 'fulfilled') bstrTotalSupply = supply.value
       if (burned.status === 'fulfilled') bstrBurned = burned.value
+      if (burns.status === 'fulfilled') burnHistory = burns.value as BurnEvent[]
     }
+
+    if (MOCK) burnHistory = mockBurnHistory
 
     return {
       stats: stats.status === 'fulfilled' ? stats.value : null,
       stakingGlobal: stakingGlobal.status === 'fulfilled' ? stakingGlobal.value : null,
       userStaking: userStaking.status === 'fulfilled' ? userStaking.value : null,
-      currentRound: currentRound.status === 'fulfilled' ? currentRound.value : null,
       history: history.status === 'fulfilled' ? history.value : [],
       bstrTotalSupply,
       bstrBurned,
+      burnHistory,
     }
   } catch {
     return {
-      stats: null, stakingGlobal: null, userStaking: null, currentRound: null, history: [],
-      bstrTotalSupply: 0, bstrBurned: 0,
+      stats: null, stakingGlobal: null, userStaking: null, history: [],
+      bstrTotalSupply: 0, bstrBurned: 0, burnHistory: [] as BurnEvent[],
     }
   }
 }
 
 export default async function HomePage() {
-  const { stats, stakingGlobal, userStaking, currentRound, history, bstrTotalSupply, bstrBurned } =
+  const { stats, stakingGlobal, userStaking, history, bstrTotalSupply, bstrBurned, burnHistory } =
     await getDashboardData()
 
   const stakedBean = parseFloat(userStaking?.balance ?? '0')
   const beanPrice = Number(stats?.beanPriceUsd ?? 0)
   const treasuryUsd = stakedBean * beanPrice
   const apr = Number(stakingGlobal?.apr ?? 0)
-  const beanpotPool = currentRound?.beanpotPoolFormatted ?? '0'
 
   const bstrCirculating = bstrTotalSupply > 0 ? bstrTotalSupply - bstrBurned : 0
   const navPerBstrUsd = bstrCirculating > 0 ? treasuryUsd / bstrCirculating : 0
@@ -209,13 +213,9 @@ export default async function HomePage() {
           <ChartWrapper history={history} />
         </div>
 
-        {/* Beanpot + activity */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
-          <BeanpotCard
-            beanpotPool={beanpotPool}
-            beanPriceUsd={beanPrice}
-          />
-          <RecentActivity history={history} />
+        {/* Recent activity */}
+        <div className="mb-6">
+          <RecentActivity history={history} burnHistory={burnHistory} />
         </div>
 
         {/* How it works */}

@@ -57,6 +57,14 @@ export interface CurrentRound {
   settled: boolean
 }
 
+export interface BurnEvent {
+  bstrBurned: number
+  ethSpent: number
+  timestamp: number
+  txHash: string
+  blockNumber: number
+}
+
 export interface DashboardData {
   stats: BeanStats
   stakingGlobal: StakingGlobalStats

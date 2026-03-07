@@ -6,6 +6,19 @@ import type {
   CurrentRound,
   HistoryItem,
 } from '@/types'
+import {
+  mockBeanStats,
+  mockStakingGlobal,
+  mockUserStaking,
+  mockUserRewards,
+  mockCurrentRound,
+  mockHistory,
+  mockBurnHistory,
+} from '@/lib/mock-data'
+
+// Set MOCK_DATA=true in .env.local for local preview with simulated agent data.
+// Never set in production — Vercel env vars do not include this.
+const MOCK = process.env.MOCK_DATA === 'true'
 
 const API = 'https://api.minebean.com/api'
 
@@ -17,6 +30,7 @@ const FETCH_OPTS: RequestInit = {
 }
 
 export async function fetchBeanStats(): Promise<BeanStats> {
+  if (MOCK) return mockBeanStats
   const res = await fetch(`${API}/stats`, FETCH_OPTS)
   if (!res.ok) throw new Error(`fetchBeanStats: ${res.status}`)
   const data = await res.json()
@@ -34,6 +48,7 @@ export async function fetchBeanStats(): Promise<BeanStats> {
 }
 
 export async function fetchStakingGlobalStats(): Promise<StakingGlobalStats> {
+  if (MOCK) return mockStakingGlobal
   const res = await fetch(`${API}/staking/stats`, FETCH_OPTS)
   if (!res.ok) throw new Error(`fetchStakingGlobalStats: ${res.status}`)
   const data = await res.json()
@@ -45,6 +60,7 @@ export async function fetchStakingGlobalStats(): Promise<StakingGlobalStats> {
 }
 
 export async function fetchUserStaking(address: string): Promise<UserStakingInfo> {
+  if (MOCK) return mockUserStaking
   const res = await fetch(`${API}/staking/${address}`, FETCH_OPTS)
   if (!res.ok) throw new Error(`fetchUserStaking: ${res.status}`)
   const data = await res.json()
@@ -57,18 +73,21 @@ export async function fetchUserStaking(address: string): Promise<UserStakingInfo
 }
 
 export async function fetchUserRewards(address: string): Promise<UserRewards> {
+  if (MOCK) return mockUserRewards
   const res = await fetch(`${API}/user/${address}/rewards`, FETCH_OPTS)
   if (!res.ok) throw new Error(`fetchUserRewards: ${res.status}`)
   return res.json()
 }
 
 export async function fetchCurrentRound(): Promise<CurrentRound> {
+  if (MOCK) return mockCurrentRound
   const res = await fetch(`${API}/round/current`, FETCH_OPTS)
   if (!res.ok) throw new Error(`fetchCurrentRound: ${res.status}`)
   return res.json()
 }
 
 export async function fetchUserHistory(address: string, limit = 50): Promise<HistoryItem[]> {
+  if (MOCK) return mockHistory
   const res = await fetch(`${API}/user/${address}/history?limit=${limit}`, FETCH_OPTS)
   if (!res.ok) throw new Error(`fetchUserHistory: ${res.status}`)
   const data = await res.json()

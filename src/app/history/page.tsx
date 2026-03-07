@@ -1,15 +1,17 @@
 import { fetchUserHistory, fetchBeanStats } from '@/lib/api'
-import { fetchBstrBurned } from '@/lib/onchain'
+import { fetchBstrBurned, fetchBurnHistory } from '@/lib/onchain'
 import { timeAgo, formatBEAN, formatUSD } from '@/lib/utils'
+import { mockBurnHistory } from '@/lib/mock-data'
 import ChartWrapper from '@/components/ChartWrapper'
 import AutoRefresh from '@/components/AutoRefresh'
 import BeanIcon from '@/components/BeanIcon'
 import Header from '@/components/Header'
 import Footer from '@/components/Footer'
-import type { HistoryItem } from '@/types'
+import type { HistoryItem, BurnEvent } from '@/types'
 
 const AGENT_ADDRESS = process.env.NEXT_PUBLIC_AGENT_ADDRESS ?? ''
 const BSTR_ADDRESS = process.env.NEXT_PUBLIC_BSTR_ADDRESS ?? ''
+const MOCK = process.env.MOCK_DATA === 'true'
 
 export const revalidate = 60
 
@@ -28,19 +30,29 @@ export default async function HistoryPage() {
   let history: HistoryItem[] = []
   let beanPriceUsd = 0
   let bstrBurned = 0
+  let burnHistory: BurnEvent[] = []
 
   try {
     const fetches: Promise<unknown>[] = [
       fetchUserHistory(AGENT_ADDRESS, 200),
       fetchBeanStats(),
     ]
-    if (BSTR_ADDRESS) fetches.push(fetchBstrBurned(BSTR_ADDRESS))
+    if (BSTR_ADDRESS) {
+      fetches.push(fetchBstrBurned(BSTR_ADDRESS))
+      fetches.push(fetchBurnHistory(BSTR_ADDRESS))
+    }
 
-    const [h, s, b] = await Promise.allSettled(fetches)
+    const [h, s, b, bh] = await Promise.allSettled(fetches)
     if (h.status === 'fulfilled') history = h.value as HistoryItem[]
     if (s.status === 'fulfilled') beanPriceUsd = (s.value as { beanPriceUsd: number }).beanPriceUsd
     if (b && b.status === 'fulfilled') bstrBurned = b.value as number
+    if (bh && bh.status === 'fulfilled') burnHistory = bh.value as BurnEvent[]
   } catch {}
+
+  if (MOCK) {
+    burnHistory = mockBurnHistory
+    bstrBurned = mockBurnHistory.reduce((sum, e) => sum + e.bstrBurned, 0)
+  }
 
   const totalBeanEarned = history.reduce((sum, item) => {
     return sum + parseFloat(item.beanRewardFormatted ?? item.amountFormatted ?? '0')
@@ -141,15 +153,15 @@ export default async function HistoryPage() {
                 ETH staking rewards used to buy and permanently burn BSTR
               </p>
             </div>
-            {BSTR_ADDRESS && bstrBurned > 0 && (
+            {bstrBurned > 0 && (
               <div className="text-right">
                 <p className="text-xs text-muted mb-0.5">Total burned</p>
-                <p className="font-mono font-bold text-accent">{formatBEAN(bstrBurned)} BSTR</p>
+                <p className="font-mono font-bold text-orange-400">{formatBEAN(bstrBurned)} BSTR</p>
               </div>
             )}
           </div>
 
-          {!BSTR_ADDRESS ? (
+          {!BSTR_ADDRESS && !MOCK ? (
             <div className="p-8">
               <p className="text-muted text-sm mb-4">
                 BSTR buyback and burn activity will appear here after token launch. Every 12 hours,
@@ -171,31 +183,70 @@ export default async function HistoryPage() {
                 </div>
               </div>
             </div>
+          ) : burnHistory.length === 0 ? (
+            <div className="p-8 text-center text-muted text-sm">No burn events yet.</div>
           ) : (
-            <div className="p-6">
-              <p className="text-muted text-sm mb-4">
-                All buyback and burn transactions are verifiable on-chain. BSTR sent to the burn
-                address is permanently removed from circulation.
-              </p>
-              <div className="flex flex-col sm:flex-row gap-3">
-                <a
-                  href={`https://basescan.org/token/${BSTR_ADDRESS}?a=0x000000000000000000000000000000000000dead`}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="inline-flex items-center gap-2 text-sm text-muted hover:text-white transition-colors border border-border rounded-lg px-4 py-2"
-                >
-                  View burn address on Basescan →
-                </a>
-                <a
-                  href={`https://basescan.org/token/${BSTR_ADDRESS}`}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="inline-flex items-center gap-2 text-sm text-muted hover:text-white transition-colors border border-border rounded-lg px-4 py-2"
-                >
-                  View BSTR contract on Basescan →
-                </a>
+            <>
+              <div className="divide-y divide-border">
+                {burnHistory.map((event, i) => (
+                  <div
+                    key={i}
+                    className="px-6 py-4 flex items-center justify-between hover:bg-card/50 transition-colors"
+                  >
+                    <div className="flex items-center gap-4">
+                      <span className="text-sm font-medium text-orange-400 w-24 sm:w-32">Burned</span>
+                      <span className="text-sm font-mono text-white">
+                        {event.bstrBurned.toLocaleString()} BSTR
+                      </span>
+                      {event.ethSpent > 0 && (
+                        <span className="hidden sm:block text-xs text-muted">
+                          {event.ethSpent.toFixed(4)} ETH
+                        </span>
+                      )}
+                    </div>
+                    <div className="flex items-center gap-4">
+                      <span className="text-xs text-muted">{timeAgo(event.timestamp)}</span>
+                      <a
+                        href={`https://basescan.org/tx/${event.txHash}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="hidden sm:block text-xs text-muted hover:text-white transition-colors font-mono"
+                      >
+                        {event.txHash.slice(0, 8)}…
+                      </a>
+                    </div>
+                  </div>
+                ))}
               </div>
-            </div>
+              <div className="px-6 py-4 border-t border-border flex items-center justify-between">
+                <div className="flex gap-6">
+                  <div>
+                    <p className="text-xs text-muted mb-0.5">Total BSTR burned</p>
+                    <p className="font-mono font-semibold text-orange-400">
+                      {formatBEAN(bstrBurned)} BSTR
+                    </p>
+                  </div>
+                  {burnHistory.some(e => e.ethSpent > 0) && (
+                    <div>
+                      <p className="text-xs text-muted mb-0.5">Total ETH spent</p>
+                      <p className="font-mono font-semibold text-white">
+                        {burnHistory.reduce((sum, e) => sum + e.ethSpent, 0).toFixed(4)} ETH
+                      </p>
+                    </div>
+                  )}
+                </div>
+                {BSTR_ADDRESS && (
+                  <a
+                    href={`https://basescan.org/token/${BSTR_ADDRESS}?a=0x000000000000000000000000000000000000dead`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-xs text-muted hover:text-white transition-colors"
+                  >
+                    View burn address →
+                  </a>
+                )}
+              </div>
+            </>
           )}
         </div>
       </main>
