@@ -11,6 +11,8 @@ out/
 .env
 .env.local
 .env.*.local
+.env.production
+.env.development
 
 # build output
 build/
@@ -18,10 +20,27 @@ dist/
 
 # misc
 .DS_Store
+Thumbs.db
 *.pem
+*.key
+*.secret
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
+*.log
+
+# vercel
+.vercel
+
+# editor
+.vscode/
+.idea/
+
+# claude-flow / local tooling
+.claude-flow/
+
+# coverage
+coverage/
 
 # typescript
 *.tsbuildinfo
