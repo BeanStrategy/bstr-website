@@ -98,18 +98,13 @@ export default async function HomePage() {
         </div>
 
         {/* Stat cards */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
+        <div className="grid grid-cols-2 md:grid-cols-3 gap-4 mb-4">
           <StatCard
             label="Staking APR"
             value={apr > 0 ? `${apr.toFixed(0)}%` : '—'}
             sub="Auto-compounding daily"
             accent
             badge="Live"
-          />
-          <StatCard
-            label="NAV per BSTR"
-            value={navPerBstr}
-            sub="After token launch"
           />
           <StatCard
             label="BEAN Price"
@@ -120,6 +115,20 @@ export default async function HomePage() {
             label="Staking TVL"
             value={stakingGlobal ? formatUSD(stakingGlobal.tvlUsd) : '—'}
             sub="MineBean protocol total"
+          />
+        </div>
+
+        {/* BSTR metrics */}
+        <div className="grid grid-cols-2 gap-4 mb-8">
+          <StatCard
+            label="NAV per BSTR"
+            value={navPerBstr}
+            sub="After token launch"
+          />
+          <StatCard
+            label="BSTR Burned"
+            value="—"
+            sub="After token launch"
           />
         </div>
 
