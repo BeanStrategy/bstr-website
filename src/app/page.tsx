@@ -5,6 +5,7 @@ import {
   fetchCurrentRound,
   fetchUserHistory,
 } from '@/lib/api'
+import { fetchBstrTotalSupply, fetchBstrBurned } from '@/lib/onchain'
 import { formatBEAN, formatUSD, formatPercent } from '@/lib/utils'
 import StatCard from '@/components/StatCard'
 import BeanpotCard from '@/components/BeanpotCard'
@@ -17,12 +18,13 @@ import Header from '@/components/Header'
 import Footer from '@/components/Footer'
 
 const AGENT_ADDRESS = process.env.NEXT_PUBLIC_AGENT_ADDRESS ?? ''
+const BSTR_ADDRESS = process.env.NEXT_PUBLIC_BSTR_ADDRESS ?? ''
 
 export const revalidate = 60
 
 async function getDashboardData() {
   try {
-    const [stats, stakingGlobal, userStaking, currentRound, history] = await Promise.allSettled([
+    const minebean = Promise.allSettled([
       fetchBeanStats(),
       fetchStakingGlobalStats(),
       fetchUserStaking(AGENT_ADDRESS),
@@ -30,20 +32,44 @@ async function getDashboardData() {
       fetchUserHistory(AGENT_ADDRESS),
     ])
 
+    const bstr = BSTR_ADDRESS
+      ? Promise.allSettled([
+          fetchBstrTotalSupply(BSTR_ADDRESS),
+          fetchBstrBurned(BSTR_ADDRESS),
+        ])
+      : Promise.resolve(null)
+
+    const [minebeanResults, bstrResults] = await Promise.all([minebean, bstr])
+    const [stats, stakingGlobal, userStaking, currentRound, history] = minebeanResults
+
+    let bstrTotalSupply = 0
+    let bstrBurned = 0
+    if (bstrResults) {
+      const [supply, burned] = bstrResults
+      if (supply.status === 'fulfilled') bstrTotalSupply = supply.value
+      if (burned.status === 'fulfilled') bstrBurned = burned.value
+    }
+
     return {
       stats: stats.status === 'fulfilled' ? stats.value : null,
       stakingGlobal: stakingGlobal.status === 'fulfilled' ? stakingGlobal.value : null,
       userStaking: userStaking.status === 'fulfilled' ? userStaking.value : null,
       currentRound: currentRound.status === 'fulfilled' ? currentRound.value : null,
       history: history.status === 'fulfilled' ? history.value : [],
+      bstrTotalSupply,
+      bstrBurned,
     }
   } catch {
-    return { stats: null, stakingGlobal: null, userStaking: null, currentRound: null, history: [] }
+    return {
+      stats: null, stakingGlobal: null, userStaking: null, currentRound: null, history: [],
+      bstrTotalSupply: 0, bstrBurned: 0,
+    }
   }
 }
 
 export default async function HomePage() {
-  const { stats, stakingGlobal, userStaking, currentRound, history } = await getDashboardData()
+  const { stats, stakingGlobal, userStaking, currentRound, history, bstrTotalSupply, bstrBurned } =
+    await getDashboardData()
 
   const stakedBean = parseFloat(userStaking?.balance ?? '0')
   const beanPrice = Number(stats?.beanPriceUsd ?? 0)
@@ -51,8 +77,9 @@ export default async function HomePage() {
   const apr = Number(stakingGlobal?.apr ?? 0)
   const beanpotPool = currentRound?.beanpotPoolFormatted ?? '0'
 
-  // NAV calculation requires BSTR total supply from chain — placeholder until token launches
-  const navPerBstr = '—'
+  const bstrCirculating = bstrTotalSupply > 0 ? bstrTotalSupply - bstrBurned : 0
+  const navPerBstrUsd = bstrCirculating > 0 ? treasuryUsd / bstrCirculating : 0
+  const hasBstr = BSTR_ADDRESS !== ''
 
 
   return (
@@ -119,17 +146,56 @@ export default async function HomePage() {
         </div>
 
         {/* BSTR metrics */}
-        <div className="grid grid-cols-2 gap-4 mb-8">
+        <div className="grid grid-cols-2 gap-4 mb-4">
           <StatCard
             label="NAV per BSTR"
-            value={navPerBstr}
-            sub="After token launch"
+            value={hasBstr && navPerBstrUsd > 0 ? formatUSD(navPerBstrUsd) : '—'}
+            sub={hasBstr ? 'Treasury USD / circulating supply' : 'After token launch'}
           />
           <StatCard
             label="BSTR Burned"
-            value="—"
-            sub="After token launch"
+            value={hasBstr && bstrBurned > 0 ? formatBEAN(bstrBurned) : '—'}
+            sub={hasBstr ? 'Permanently removed from supply' : 'After token launch'}
           />
+        </div>
+
+        {/* Buyback & Burn explainer */}
+        <div className="card p-6 mb-6">
+          <h3 className="font-semibold mb-1">BSTR Buyback &amp; Burn</h3>
+          <p className="text-muted text-sm mb-5">
+            A second flywheel runs alongside BEAN accumulation. Staking yield funds automatic BSTR
+            purchases — permanently removing supply every 12 hours.
+          </p>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div>
+              <p className="text-xs text-muted uppercase tracking-wide mb-2">Source</p>
+              <p className="text-sm text-white font-medium mb-1">ETH staking rewards</p>
+              <p className="text-sm text-muted">
+                MineBean staking pays ETH yield on top of BEAN yield. 30% of ETH above the
+                operating reserve goes directly to buybacks.
+              </p>
+            </div>
+            <div>
+              <p className="text-xs text-muted uppercase tracking-wide mb-2">Mechanism</p>
+              <p className="text-sm text-white font-medium mb-1">Buy on market → burn forever</p>
+              <p className="text-sm text-muted">
+                The agent buys BSTR at market price via Bankr and immediately sends it to the burn
+                address{' '}
+                <span className="font-mono text-xs">0x000...dead</span>.
+                No treasury allocation. No vesting. Gone permanently.
+              </p>
+            </div>
+            <div>
+              <p className="text-xs text-muted uppercase tracking-wide mb-2">Effect</p>
+              <p className="text-sm text-white font-medium mb-1">
+                Circulating supply falls, NAV rises
+              </p>
+              <p className="text-sm text-muted">
+                As BEAN treasury grows and BSTR supply shrinks, NAV per BSTR increases on both
+                sides of the equation — compounding value for holders over time.
+              </p>
+            </div>
+          </div>
         </div>
 
         {/* Accumulation chart */}

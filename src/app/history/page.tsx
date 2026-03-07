@@ -1,4 +1,5 @@
 import { fetchUserHistory, fetchBeanStats } from '@/lib/api'
+import { fetchBstrBurned } from '@/lib/onchain'
 import { timeAgo, formatBEAN, formatUSD } from '@/lib/utils'
 import ChartWrapper from '@/components/ChartWrapper'
 import AutoRefresh from '@/components/AutoRefresh'
@@ -8,6 +9,7 @@ import Footer from '@/components/Footer'
 import type { HistoryItem } from '@/types'
 
 const AGENT_ADDRESS = process.env.NEXT_PUBLIC_AGENT_ADDRESS ?? ''
+const BSTR_ADDRESS = process.env.NEXT_PUBLIC_BSTR_ADDRESS ?? ''
 
 export const revalidate = 60
 
@@ -25,14 +27,19 @@ const EVENT_LABELS: Record<string, { label: string; color: string }> = {
 export default async function HistoryPage() {
   let history: HistoryItem[] = []
   let beanPriceUsd = 0
+  let bstrBurned = 0
 
   try {
-    const [h, s] = await Promise.allSettled([
+    const fetches: Promise<unknown>[] = [
       fetchUserHistory(AGENT_ADDRESS, 200),
       fetchBeanStats(),
-    ])
-    if (h.status === 'fulfilled') history = h.value
-    if (s.status === 'fulfilled') beanPriceUsd = s.value.beanPriceUsd
+    ]
+    if (BSTR_ADDRESS) fetches.push(fetchBstrBurned(BSTR_ADDRESS))
+
+    const [h, s, b] = await Promise.allSettled(fetches)
+    if (h.status === 'fulfilled') history = h.value as HistoryItem[]
+    if (s.status === 'fulfilled') beanPriceUsd = (s.value as { beanPriceUsd: number }).beanPriceUsd
+    if (b && b.status === 'fulfilled') bstrBurned = b.value as number
   } catch {}
 
   const totalBeanEarned = history.reduce((sum, item) => {
@@ -122,6 +129,72 @@ export default async function HistoryPage() {
                   </div>
                 )
               })}
+            </div>
+          )}
+        </div>
+        {/* Buyback & Burn History */}
+        <div className="card mt-8">
+          <div className="p-6 border-b border-border flex items-center justify-between">
+            <div>
+              <h3 className="font-semibold">BSTR Buyback &amp; Burn</h3>
+              <p className="text-muted text-sm mt-0.5">
+                ETH staking rewards used to buy and permanently burn BSTR
+              </p>
+            </div>
+            {BSTR_ADDRESS && bstrBurned > 0 && (
+              <div className="text-right">
+                <p className="text-xs text-muted mb-0.5">Total burned</p>
+                <p className="font-mono font-bold text-accent">{formatBEAN(bstrBurned)} BSTR</p>
+              </div>
+            )}
+          </div>
+
+          {!BSTR_ADDRESS ? (
+            <div className="p-8">
+              <p className="text-muted text-sm mb-4">
+                BSTR buyback and burn activity will appear here after token launch. Every 12 hours,
+                30% of ETH staking rewards above the operating reserve are used to buy BSTR at
+                market price and send it to the burn address permanently.
+              </p>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
+                <div className="bg-card/50 rounded-lg p-4 border border-border">
+                  <p className="text-muted mb-1">Frequency</p>
+                  <p className="font-medium">Every 12 hours</p>
+                </div>
+                <div className="bg-card/50 rounded-lg p-4 border border-border">
+                  <p className="text-muted mb-1">Source</p>
+                  <p className="font-medium">30% of ETH yield above reserve</p>
+                </div>
+                <div className="bg-card/50 rounded-lg p-4 border border-border">
+                  <p className="text-muted mb-1">Destination</p>
+                  <p className="font-mono text-xs text-muted">0x000000000000000000000000000000000000dead</p>
+                </div>
+              </div>
+            </div>
+          ) : (
+            <div className="p-6">
+              <p className="text-muted text-sm mb-4">
+                All buyback and burn transactions are verifiable on-chain. BSTR sent to the burn
+                address is permanently removed from circulation.
+              </p>
+              <div className="flex flex-col sm:flex-row gap-3">
+                <a
+                  href={`https://basescan.org/token/${BSTR_ADDRESS}?a=0x000000000000000000000000000000000000dead`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-2 text-sm text-muted hover:text-white transition-colors border border-border rounded-lg px-4 py-2"
+                >
+                  View burn address on Basescan →
+                </a>
+                <a
+                  href={`https://basescan.org/token/${BSTR_ADDRESS}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-2 text-sm text-muted hover:text-white transition-colors border border-border rounded-lg px-4 py-2"
+                >
+                  View BSTR contract on Basescan →
+                </a>
+              </div>
             </div>
           )}
         </div>

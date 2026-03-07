@@ -25,7 +25,13 @@ export default function HowItWorks({ apr }: HowItWorksProps) {
       number: '03',
       title: aprTitle,
       description:
-        'All BEAN is staked on MineBean protocol. Staking yield from treasury buybacks compounds daily, growing the treasury exponentially.',
+        'All BEAN is staked on MineBean protocol. Staking yield compounds daily, growing the treasury and generating ETH rewards.',
+    },
+    {
+      number: '04',
+      title: 'ETH Yield Burns BSTR',
+      description:
+        'A portion of ETH staking rewards buys BSTR on the open market and permanently burns it. Less supply and more BEAN means higher NAV per BSTR.',
     },
   ]
 
@@ -33,10 +39,10 @@ export default function HowItWorks({ apr }: HowItWorksProps) {
     <section className="mt-20">
       <h2 className="text-2xl font-bold mb-2">How It Works</h2>
       <p className="text-muted mb-10">
-        A self-reinforcing flywheel — more BSTR trading means more BEAN, which means higher NAV,
-        which attracts more BSTR buyers.
+        Two self-reinforcing flywheels — BEAN accumulation grows the treasury, BSTR buybacks
+        reduce supply. Both compound NAV over time.
       </p>
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-6">
         {steps.map((step) => (
           <div key={step.number} className="card p-6">
             <p className="text-[#0052ff] font-mono text-sm mb-3">{step.number}</p>
@@ -47,19 +53,40 @@ export default function HowItWorks({ apr }: HowItWorksProps) {
       </div>
 
       <div className="mt-8 card p-6 border-[#0052ff]/20">
-        <h3 className="font-semibold mb-3 text-[#0052ff]">The Flywheel</h3>
-        <div className="flex flex-wrap items-center gap-2 text-sm text-muted">
-          <span className="card px-3 py-1.5">BSTR volume</span>
-          <span className="text-[#0052ff]">→</span>
-          <span className="card px-3 py-1.5 flex items-center gap-1.5">fees → <BeanIcon size={16} /></span>
-          <span className="text-[#0052ff]">→</span>
-          <span className="card px-3 py-1.5">stake @ {aprLabel}</span>
-          <span className="text-[#0052ff]">→</span>
-          <span className="card px-3 py-1.5">NAV rises</span>
-          <span className="text-[#0052ff]">→</span>
-          <span className="card px-3 py-1.5">more BSTR buyers</span>
-          <span className="text-[#0052ff]">→</span>
-          <span className="text-white">repeat</span>
+        <h3 className="font-semibold mb-4 text-[#0052ff]">The Two Flywheels</h3>
+        <div className="space-y-3">
+          <div>
+            <p className="text-xs text-muted uppercase tracking-wide mb-2">BEAN Accumulation</p>
+            <div className="flex flex-wrap items-center gap-2 text-sm text-muted">
+              <span className="card px-3 py-1.5">BSTR volume</span>
+              <span className="text-[#0052ff]">→</span>
+              <span className="card px-3 py-1.5 flex items-center gap-1.5">fees → <BeanIcon size={16} /></span>
+              <span className="text-[#0052ff]">→</span>
+              <span className="card px-3 py-1.5">stake @ {aprLabel}</span>
+              <span className="text-[#0052ff]">→</span>
+              <span className="card px-3 py-1.5">NAV rises</span>
+              <span className="text-[#0052ff]">→</span>
+              <span className="card px-3 py-1.5">more buyers</span>
+              <span className="text-[#0052ff]">→</span>
+              <span className="text-white">repeat</span>
+            </div>
+          </div>
+          <div>
+            <p className="text-xs text-muted uppercase tracking-wide mb-2">BSTR Buyback &amp; Burn</p>
+            <div className="flex flex-wrap items-center gap-2 text-sm text-muted">
+              <span className="card px-3 py-1.5">staking yield</span>
+              <span className="text-accent">→</span>
+              <span className="card px-3 py-1.5">buy BSTR</span>
+              <span className="text-accent">→</span>
+              <span className="card px-3 py-1.5">burn forever</span>
+              <span className="text-accent">→</span>
+              <span className="card px-3 py-1.5">supply ↓</span>
+              <span className="text-accent">→</span>
+              <span className="card px-3 py-1.5">NAV rises</span>
+              <span className="text-accent">→</span>
+              <span className="text-white">repeat</span>
+            </div>
+          </div>
         </div>
       </div>
     </section>
