@@ -9,11 +9,17 @@ import type {
 
 const API = 'https://api.minebean.com/api'
 
+// All fetches use no-store so page-level ISR (export const revalidate) controls caching.
+// User-Agent is required — Vercel's fetch sends none by default and some APIs block it.
+const FETCH_OPTS: RequestInit = {
+  cache: 'no-store',
+  headers: { 'User-Agent': 'BeanStrategy/1.0 (beanstrategy.com)' },
+}
+
 export async function fetchBeanStats(): Promise<BeanStats> {
-  const res = await fetch(`${API}/stats`, { next: { revalidate: 30 } })
-  if (!res.ok) throw new Error('Failed to fetch stats')
+  const res = await fetch(`${API}/stats`, FETCH_OPTS)
+  if (!res.ok) throw new Error(`fetchBeanStats: ${res.status}`)
   const data = await res.json()
-  // API nests price data under data.bean — normalize to flat structure
   return {
     beanPriceUsd: Number(data.bean?.priceUsd ?? 0),
     beanPriceNative: Number(data.bean?.priceNative ?? 0),
@@ -28,10 +34,9 @@ export async function fetchBeanStats(): Promise<BeanStats> {
 }
 
 export async function fetchStakingGlobalStats(): Promise<StakingGlobalStats> {
-  const res = await fetch(`${API}/staking/stats`, { next: { revalidate: 60 } })
-  if (!res.ok) throw new Error('Failed to fetch staking stats')
+  const res = await fetch(`${API}/staking/stats`, FETCH_OPTS)
+  if (!res.ok) throw new Error(`fetchStakingGlobalStats: ${res.status}`)
   const data = await res.json()
-  // API returns tvlUsd and apr as strings — coerce to numbers
   return {
     apr: Number(data.apr ?? 0),
     totalStaked: data.totalStakedFormatted ?? data.totalStaked ?? '0',
@@ -40,10 +45,9 @@ export async function fetchStakingGlobalStats(): Promise<StakingGlobalStats> {
 }
 
 export async function fetchUserStaking(address: string): Promise<UserStakingInfo> {
-  const res = await fetch(`${API}/staking/${address}`, { next: { revalidate: 60 } })
-  if (!res.ok) throw new Error('Failed to fetch user staking')
+  const res = await fetch(`${API}/staking/${address}`, FETCH_OPTS)
+  if (!res.ok) throw new Error(`fetchUserStaking: ${res.status}`)
   const data = await res.json()
-  // Use formatted (human-readable) values — raw values are 18-decimal wei
   return {
     balance: data.balanceFormatted ?? data.balance ?? '0',
     pendingRewards: data.pendingRewardsFormatted ?? data.pendingRewards ?? '0',
@@ -53,22 +57,20 @@ export async function fetchUserStaking(address: string): Promise<UserStakingInfo
 }
 
 export async function fetchUserRewards(address: string): Promise<UserRewards> {
-  const res = await fetch(`${API}/user/${address}/rewards`, { next: { revalidate: 60 } })
-  if (!res.ok) throw new Error('Failed to fetch rewards')
+  const res = await fetch(`${API}/user/${address}/rewards`, FETCH_OPTS)
+  if (!res.ok) throw new Error(`fetchUserRewards: ${res.status}`)
   return res.json()
 }
 
 export async function fetchCurrentRound(): Promise<CurrentRound> {
-  const res = await fetch(`${API}/round/current`, { next: { revalidate: 30 } })
-  if (!res.ok) throw new Error('Failed to fetch current round')
+  const res = await fetch(`${API}/round/current`, FETCH_OPTS)
+  if (!res.ok) throw new Error(`fetchCurrentRound: ${res.status}`)
   return res.json()
 }
 
 export async function fetchUserHistory(address: string, limit = 50): Promise<HistoryItem[]> {
-  const res = await fetch(`${API}/user/${address}/history?limit=${limit}`, {
-    next: { revalidate: 60 },
-  })
-  if (!res.ok) throw new Error('Failed to fetch history')
+  const res = await fetch(`${API}/user/${address}/history?limit=${limit}`, FETCH_OPTS)
+  if (!res.ok) throw new Error(`fetchUserHistory: ${res.status}`)
   const data = await res.json()
   return Array.isArray(data) ? data : data.items ?? []
 }
