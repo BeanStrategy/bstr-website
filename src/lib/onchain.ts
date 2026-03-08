@@ -63,6 +63,12 @@ export async function fetchWethBalance(address: string): Promise<number> {
   return hexToTokenAmount(result)
 }
 
+export async function fetchTokenBalance(tokenAddress: string, walletAddress: string): Promise<number> {
+  const padded = walletAddress.slice(2).padStart(64, '0')
+  const result = await ethCall(tokenAddress, `0x70a08231${padded}`)
+  return hexToTokenAmount(result)
+}
+
 export async function fetchBstrTotalSupply(bstrAddress: string): Promise<number> {
   const result = await ethCall(bstrAddress, '0x18160ddd')
   return hexToTokenAmount(result)
