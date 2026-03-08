@@ -2,6 +2,7 @@ import type { HistoryItem, BurnEvent } from '@/types'
 import { timeAgo } from '@/lib/utils'
 
 const EVENT_LABELS: Record<string, { label: string; color: string }> = {
+  genesis: { label: 'Seed purchase', color: 'text-[#0052ff]' },
   checkpointed: { label: 'Round won', color: 'text-accent' },
   claimedETH: { label: 'ETH claimed', color: 'text-blue-400' },
   claimedBEAN: { label: 'BEAN claimed', color: 'text-green-400' },

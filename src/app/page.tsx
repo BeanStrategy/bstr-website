@@ -6,7 +6,7 @@ import {
 } from '@/lib/api'
 import { fetchBstrTotalSupply, fetchBstrBurned, fetchBurnHistory, fetchNativeEthBalance, fetchWethBalance, fetchTokenBalance } from '@/lib/onchain'
 import { mockBurnHistory } from '@/lib/mock-data'
-import type { BurnEvent } from '@/types'
+import type { BurnEvent, HistoryItem } from '@/types'
 import { formatBEAN, formatUSD, formatPercent } from '@/lib/utils'
 import StatCard from '@/components/StatCard'
 import RecentActivity from '@/components/RecentActivity'
@@ -18,6 +18,13 @@ import Header from '@/components/Header'
 import Footer from '@/components/Footer'
 
 const AGENT_ADDRESS = process.env.NEXT_PUBLIC_AGENT_ADDRESS ?? ''
+const GENESIS_TX = '0x22cc7ac8e092bc9ae6b85efa897b9775dfd994e22264cc8e611dc8ac6bf6d435'
+const GENESIS_EVENT: HistoryItem = {
+  type: 'genesis',
+  amountFormatted: '4.728176',
+  timestamp: 1772928960,
+  txHash: GENESIS_TX,
+}
 const BSTR_ADDRESS = process.env.NEXT_PUBLIC_BSTR_ADDRESS ?? ''
 const MOCK = process.env.MOCK_DATA === 'true'
 
@@ -62,7 +69,9 @@ async function getDashboardData() {
       stats: stats.status === 'fulfilled' ? stats.value : null,
       stakingGlobal: stakingGlobal.status === 'fulfilled' ? stakingGlobal.value : null,
       userStaking: userStaking.status === 'fulfilled' ? userStaking.value : null,
-      history: history.status === 'fulfilled' ? history.value : [],
+      history: history.status === 'fulfilled'
+        ? [GENESIS_EVENT, ...(history.value as HistoryItem[]).filter(e => e.txHash !== GENESIS_TX)]
+        : [GENESIS_EVENT],
       ethBalance: ethBal.status === 'fulfilled' ? (ethBal.value as number) : 0,
       wethBalance: wethBal.status === 'fulfilled' ? (wethBal.value as number) : 0,
       beanWalletBalance: beanWalletBal.status === 'fulfilled' ? (beanWalletBal.value as number) : 0,
