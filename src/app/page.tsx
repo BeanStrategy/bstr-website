@@ -125,33 +125,54 @@ export default async function HomePage() {
 
         {/* Primary stat — treasury */}
         <div className="card p-8 mb-6 border-accent/20">
-          <p className="text-muted text-sm mb-2">Total BEAN Treasury</p>
-          <p className="stat-number text-4xl md:text-5xl lg:text-6xl font-bold text-[#0052ff] mb-2 flex items-center gap-3">
-            {formatBEAN(totalBean)} <BeanIcon size={40} />
-          </p>
-          <p className="text-muted text-xl">
-            {formatUSD(treasuryUsd)}
-          </p>
-          {stats && (
-            <p className="text-muted text-sm mt-3">
-              BEAN price:{' '}
-              <span className="text-white font-mono">{formatUSD(stats.beanPriceUsd)}</span>
-              {' · '}
-              <span className={stats.priceChange24h >= 0 ? 'text-accent' : 'text-red-400'}>
-                {formatPercent(stats.priceChange24h)} 24h
-              </span>
-            </p>
-          )}
+          <div className="flex flex-col md:flex-row md:items-center gap-8">
+
+            {/* Left: BEAN treasury number */}
+            <div className="flex-1 min-w-0">
+              <p className="text-muted text-sm mb-2">Total BEAN Treasury</p>
+              <p className="stat-number text-4xl md:text-5xl lg:text-6xl font-bold text-[#0052ff] mb-2 flex items-center gap-3">
+                {formatBEAN(totalBean)} <BeanIcon size={40} />
+              </p>
+              <p className="text-muted text-xl mb-3">{formatUSD(treasuryUsd)}</p>
+              {stats && (
+                <p className="text-muted text-sm">
+                  BEAN price:{' '}
+                  <span className="text-white font-mono">{formatUSD(stats.beanPriceUsd)}</span>
+                  {' · '}
+                  <span className={stats.priceChange24h >= 0 ? 'text-accent' : 'text-red-400'}>
+                    {formatPercent(stats.priceChange24h)} 24h
+                  </span>
+                </p>
+              )}
+            </div>
+
+            {/* Divider */}
+            <div className="hidden md:block w-px self-stretch bg-border/50" />
+
+            {/* Right: key protocol metrics */}
+            <div className="flex flex-row md:flex-col gap-8 md:gap-6 md:min-w-[160px] shrink-0">
+              <div>
+                <p className="text-xs text-muted uppercase tracking-wide mb-1">Staking APR</p>
+                <p className="text-3xl md:text-4xl font-bold text-accent">
+                  {apr > 0 ? `${apr.toFixed(0)}%` : '—'}
+                </p>
+                <p className="text-xs text-muted mt-0.5">Auto-compounding</p>
+              </div>
+              <div>
+                <p className="text-xs text-muted uppercase tracking-wide mb-1">Protocol TVL</p>
+                <p className="text-2xl md:text-3xl font-bold text-white">
+                  {stakingGlobal ? formatUSD(stakingGlobal.tvlUsd) : '—'}
+                </p>
+                <p className="text-xs text-muted mt-0.5">MineBean total</p>
+              </div>
+            </div>
+
+          </div>
         </div>
 
-        {/* Total treasury breakdown */}
-        <div className="card p-5 mb-6 grid grid-cols-1 sm:grid-cols-3 gap-4">
+        {/* Treasury asset breakdown */}
+        <div className="card p-5 mb-6 grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div>
-            <p className="text-xs text-muted mb-1">Total Treasury Value</p>
-            <p className="text-xl font-bold">{formatUSD(totalTreasuryUsd)}</p>
-            <p className="text-xs text-muted mt-0.5">All assets combined</p>
-          </div>
-          <div className="sm:border-l sm:border-border sm:pl-4">
             <p className="text-xs text-muted mb-1">BEAN</p>
             <p className="text-base font-semibold text-[#0052ff]">{formatUSD(beanUsd)}</p>
             <p className="text-xs text-muted font-mono mt-0.5">
@@ -166,27 +187,6 @@ export default async function HomePage() {
               {ethBalance.toFixed(4)} ETH{wethBalance > 0 ? ` + ${wethBalance.toFixed(4)} WETH` : ''}
             </p>
           </div>
-        </div>
-
-        {/* Stat cards */}
-        <div className="grid grid-cols-2 md:grid-cols-3 gap-4 mb-4">
-          <StatCard
-            label="Staking APR"
-            value={apr > 0 ? `${apr.toFixed(0)}%` : '—'}
-            sub="Auto-compounding daily"
-            accent
-            badge="Live"
-          />
-          <StatCard
-            label="BEAN Price"
-            value={stats ? formatUSD(stats.beanPriceUsd) : '—'}
-            sub={stats ? formatPercent(stats.priceChange24h) + ' 24h' : undefined}
-          />
-          <StatCard
-            label="Staking TVL"
-            value={stakingGlobal ? formatUSD(stakingGlobal.tvlUsd) : '—'}
-            sub="MineBean protocol total"
-          />
         </div>
 
         {/* BSTR metrics */}
