@@ -119,7 +119,7 @@ export default async function StakingPage({
               <div className="flex flex-wrap gap-x-6 gap-y-2 text-sm">
                 <span className="text-muted">
                   Pending rewards:{' '}
-                  <span className="text-white font-mono inline-flex items-center gap-1">{formatBEAN(pendingRewards)} <BeanIcon size={14} /></span>
+                  <span className="text-white font-mono inline-flex items-center gap-1">{formatBEAN(pendingRewards, 5)} <BeanIcon size={14} /></span>
                 </span>
                 <span className="text-muted">
                   Compound ready:{' '}
