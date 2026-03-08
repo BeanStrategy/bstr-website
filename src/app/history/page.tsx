@@ -63,9 +63,12 @@ export default async function HistoryPage() {
     bstrBurned = mockBurnHistory.reduce((sum, e) => sum + e.bstrBurned, 0)
   }
 
-  const totalBeanEarned = history.reduce((sum, item) => {
+  const seedBean = parseFloat(GENESIS_EVENT.amountFormatted ?? '0')
+  const earnedBean = history.reduce((sum, item) => {
+    if (item.type === 'genesis') return sum
     return sum + parseFloat(item.beanRewardFormatted ?? item.amountFormatted ?? '0')
   }, 0)
+  const totalBeanEarned = seedBean + earnedBean
 
   return (
     <>
@@ -82,11 +85,21 @@ export default async function HistoryPage() {
         {/* Summary */}
         <div className="grid grid-cols-2 md:grid-cols-3 gap-4 mb-8">
           <div className="card p-5">
-            <p className="text-muted text-sm mb-1">Total BEAN Earned</p>
+            <p className="text-muted text-sm mb-1">Total BEAN Held</p>
             <p className="stat-number text-2xl font-bold text-[#0052ff] flex items-center gap-2">
               {formatBEAN(totalBeanEarned)} <BeanIcon size={20} />
             </p>
             <p className="text-muted text-sm">{formatUSD(totalBeanEarned * beanPriceUsd)}</p>
+            <div className="mt-2 pt-2 border-t border-border/50 flex flex-col gap-0.5">
+              <p className="text-xs text-muted">
+                <span className="text-white/60">Seeded</span>{' '}
+                <span className="font-mono">{formatBEAN(seedBean)}</span>
+              </p>
+              <p className="text-xs text-muted">
+                <span className="text-accent">+ Earned</span>{' '}
+                <span className="font-mono">{formatBEAN(earnedBean)}</span>
+              </p>
+            </div>
           </div>
           <div className="card p-5">
             <p className="text-muted text-sm mb-1">Total Events</p>
