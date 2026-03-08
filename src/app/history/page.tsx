@@ -38,6 +38,9 @@ const EVENT_LABELS: Record<string, { label: string; color: string }> = {
 export default async function HistoryPage() {
   let history: HistoryItem[] = []
   let beanPriceUsd = 0
+  let priceChange24h = 0
+  let volume24h = 0
+  let liquidity = 0
   let bstrBurned = 0
   let burnHistory: BurnEvent[] = []
   let pendingBean = 0
@@ -55,7 +58,13 @@ export default async function HistoryPage() {
 
     const [h, s, st, b, bh] = await Promise.allSettled(fetches)
     if (h.status === 'fulfilled') history = [GENESIS_EVENT, ...(h.value as HistoryItem[]).filter(e => e.txHash !== GENESIS_TX)]
-    if (s.status === 'fulfilled') beanPriceUsd = (s.value as { beanPriceUsd: number }).beanPriceUsd
+    if (s.status === 'fulfilled') {
+      const stats = s.value as { beanPriceUsd: number; priceChange24h: number; volume24h: number; liquidity: number }
+      beanPriceUsd = stats.beanPriceUsd
+      priceChange24h = stats.priceChange24h
+      volume24h = stats.volume24h
+      liquidity = stats.liquidity
+    }
     if (st.status === 'fulfilled') pendingBean = parseFloat((st.value as { pendingRewards?: string })?.pendingRewards ?? '0')
     if (b && b.status === 'fulfilled') bstrBurned = b.value as number
     if (bh && bh.status === 'fulfilled') burnHistory = bh.value as BurnEvent[]
@@ -114,7 +123,24 @@ export default async function HistoryPage() {
           </div>
           <div className="card p-5">
             <p className="text-muted text-sm mb-1">BEAN Price</p>
-            <p className="stat-number text-2xl font-bold">{formatUSD(beanPriceUsd)}</p>
+            <div className="flex items-baseline gap-2 mb-3">
+              <p className="stat-number text-2xl font-bold">{formatUSD(beanPriceUsd)}</p>
+              {priceChange24h !== 0 && (
+                <span className={`text-sm font-medium ${priceChange24h >= 0 ? 'text-accent' : 'text-red-400'}`}>
+                  {priceChange24h >= 0 ? '+' : ''}{priceChange24h.toFixed(2)}% 24h
+                </span>
+              )}
+            </div>
+            <div className="grid grid-cols-2 gap-3 border-t border-border pt-3">
+              <div>
+                <p className="text-xs text-muted mb-0.5">Vol 24h</p>
+                <p className="text-sm font-mono font-medium">{formatUSD(volume24h)}</p>
+              </div>
+              <div>
+                <p className="text-xs text-muted mb-0.5">Liquidity</p>
+                <p className="text-sm font-mono font-medium">{formatUSD(liquidity)}</p>
+              </div>
+            </div>
           </div>
         </div>
 
