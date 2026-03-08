@@ -17,9 +17,9 @@ export default function HowItWorks({ apr }: HowItWorksProps) {
     },
     {
       number: '02',
-      title: 'Fees Buy BEAN',
+      title: 'Fees Split 80/20',
       description:
-        'The autonomous agent converts accumulated WETH fees into BEAN tokens at market price. No selling. No distributions. Pure accumulation.',
+        '80% of accumulated fees buy BEAN and stake it. 20% buy BSTR and burn it permanently. Both sides compound NAV over time.',
     },
     {
       number: '03',
@@ -39,10 +39,11 @@ export default function HowItWorks({ apr }: HowItWorksProps) {
     <section className="mt-20">
       <h2 className="text-2xl font-bold mb-2">How It Works</h2>
       <p className="text-muted mb-10">
-        Two self-reinforcing flywheels — BEAN accumulation grows the treasury, BSTR buybacks
-        reduce supply. Both compound NAV over time.
+        Every BSTR trade generates fees. Those fees split two ways — growing the BEAN treasury and shrinking BSTR supply. Both push NAV higher.
       </p>
-      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-6">
+
+      {/* Step cards */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-6 mb-8">
         {steps.map((step) => (
           <div key={step.number} className="card p-6">
             <p className="text-[#0052ff] font-mono text-sm mb-3">{step.number}</p>
@@ -52,84 +53,106 @@ export default function HowItWorks({ apr }: HowItWorksProps) {
         ))}
       </div>
 
-      <div className="mt-8 card p-6 border-[#0052ff]/20">
-        <h3 className="font-semibold mb-5 text-[#0052ff]">The Two Flywheels</h3>
-        <div className="space-y-6">
+      {/* Split funnel diagram */}
+      <div className="card border-[#0052ff]/20 overflow-hidden">
 
-          {/* Flywheel 1 */}
-          <div>
-            <p className="text-xs text-muted uppercase tracking-wide mb-3">BEAN Accumulation</p>
-            {/* Mobile: vertical */}
-            <div className="flex flex-col gap-1 sm:hidden text-sm">
-              {[
-                <span key="1" className="card px-3 py-1.5 text-muted">BSTR volume</span>,
-                <span key="2" className="card px-3 py-1.5 flex items-center gap-1.5 text-muted">fees → <BeanIcon size={14} /></span>,
-                <span key="3" className="card px-3 py-1.5 text-muted">stake @ {aprLabel}</span>,
-                <span key="4" className="card px-3 py-1.5 text-muted">yield compounds</span>,
-                <span key="5" className="card px-3 py-1.5 text-muted">more BEAN</span>,
-                <span key="6" className="card px-3 py-1.5 text-muted">NAV rises</span>,
-              ].map((step, i) => (
-                <div key={i} className="flex flex-col items-start">
-                  {step}
-                  {i < 5 && <span className="text-[#0052ff] text-xs pl-3">↓</span>}
-                </div>
-              ))}
-              <span className="text-white text-sm pl-1">↺ repeat</span>
-            </div>
-            {/* Desktop: horizontal */}
-            <div className="hidden sm:flex flex-wrap items-center gap-2 text-sm text-muted">
-              <span className="card px-3 py-1.5">BSTR volume</span>
-              <span className="text-[#0052ff]">→</span>
-              <span className="card px-3 py-1.5 flex items-center gap-1.5">fees → <BeanIcon size={16} /></span>
-              <span className="text-[#0052ff]">→</span>
-              <span className="card px-3 py-1.5">stake @ {aprLabel}</span>
-              <span className="text-[#0052ff]">→</span>
-              <span className="card px-3 py-1.5">yield compounds</span>
-              <span className="text-[#0052ff]">→</span>
-              <span className="card px-3 py-1.5">more BEAN</span>
-              <span className="text-[#0052ff]">→</span>
-              <span className="card px-3 py-1.5">NAV rises</span>
-              <span className="text-[#0052ff]">→</span>
-              <span className="text-white">repeat</span>
-            </div>
+        {/* Input node */}
+        <div className="flex justify-center px-6 pt-6 pb-0">
+          <div className="bg-[#0052ff]/10 border border-[#0052ff]/30 rounded-xl px-6 py-3 text-center">
+            <p className="text-xs text-muted uppercase tracking-wide mb-0.5">every BSTR trade</p>
+            <p className="font-semibold text-white">1.2% fee → treasury</p>
           </div>
-
-          {/* Flywheel 2 */}
-          <div>
-            <p className="text-xs text-muted uppercase tracking-wide mb-3">BSTR Buyback &amp; Burn</p>
-            {/* Mobile: vertical */}
-            <div className="flex flex-col gap-1 sm:hidden text-sm">
-              {[
-                '20% of fees',
-                'buy BSTR',
-                'burn forever',
-                'supply ↓',
-                'NAV rises',
-              ].map((step, i) => (
-                <div key={i} className="flex flex-col items-start">
-                  <span className="card px-3 py-1.5 text-muted">{step}</span>
-                  {i < 4 && <span className="text-[#0052ff] text-xs pl-3">↓</span>}
-                </div>
-              ))}
-              <span className="text-white text-sm pl-1">↺ repeat</span>
-            </div>
-            {/* Desktop: horizontal */}
-            <div className="hidden sm:flex flex-wrap items-center gap-2 text-sm text-muted">
-              <span className="card px-3 py-1.5">20% of fees</span>
-              <span className="text-[#0052ff]">→</span>
-              <span className="card px-3 py-1.5">buy BSTR</span>
-              <span className="text-[#0052ff]">→</span>
-              <span className="card px-3 py-1.5">burn forever</span>
-              <span className="text-[#0052ff]">→</span>
-              <span className="card px-3 py-1.5">supply ↓</span>
-              <span className="text-[#0052ff]">→</span>
-              <span className="card px-3 py-1.5">NAV rises</span>
-              <span className="text-[#0052ff]">→</span>
-              <span className="text-white">repeat</span>
-            </div>
-          </div>
-
         </div>
+
+        {/* Fork connector */}
+        <div className="flex justify-center">
+          <div className="w-px h-3 bg-[#0052ff]/30"></div>
+        </div>
+        <div className="flex mx-12 md:mx-24">
+          <div className="flex-1 h-4 border-l-2 border-b-2 border-[#0052ff]/30 rounded-bl-lg"></div>
+          <div className="flex-1 h-4 border-r-2 border-b-2 border-[#0052ff]/30 rounded-br-lg"></div>
+        </div>
+
+        {/* Split percentage labels */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-px">
+          <div className="flex justify-center pt-1 pb-1">
+            <span className="text-sm font-mono font-bold text-[#22c55e]">80% → BEAN</span>
+          </div>
+          <div className="flex justify-center pt-1 pb-1">
+            <span className="text-sm font-mono font-bold text-orange-400">20% → Burn</span>
+          </div>
+        </div>
+
+        {/* Two path columns */}
+        <div className="grid grid-cols-1 md:grid-cols-2 md:divide-x divide-border">
+
+          {/* Left: BEAN accumulation */}
+          <div className="p-5 flex flex-col items-center gap-2 border-b md:border-b-0 border-border">
+            <p className="text-xs text-[#22c55e] uppercase tracking-wide font-medium text-center mb-1">
+              BEAN Accumulation
+            </p>
+            {[
+              { text: <span className="flex items-center justify-center gap-1.5">Swap WETH → <BeanIcon size={13} /> BEAN</span> },
+              { text: 'Stake on MineBean' },
+              { text: `Earn ${aprLabel}` },
+              { text: 'Compounds every 4h' },
+              { text: 'Treasury grows ↑', highlight: true },
+            ].map((step, i) => (
+              <div key={i} className="flex flex-col items-center gap-1 w-full max-w-xs">
+                <div className={`border rounded-lg px-3 py-2 text-xs text-center w-full ${
+                  step.highlight
+                    ? 'border-[#22c55e]/40 text-[#22c55e] font-semibold bg-[#22c55e]/5'
+                    : 'border-[#22c55e]/15 text-muted'
+                }`}>
+                  {step.text}
+                </div>
+                {i < 4 && <span className="text-[#22c55e]/50 text-xs">↓</span>}
+              </div>
+            ))}
+          </div>
+
+          {/* Right: BSTR burn */}
+          <div className="p-5 flex flex-col items-center gap-2">
+            <p className="text-xs text-orange-400 uppercase tracking-wide font-medium text-center mb-1">
+              BSTR Buyback &amp; Burn
+            </p>
+            {[
+              { text: 'Buy BSTR at market price' },
+              { text: 'Send to 0x000...dead' },
+              { text: 'Permanently removed' },
+              { text: 'Circulating supply ↓', highlight: true },
+            ].map((step, i) => (
+              <div key={i} className="flex flex-col items-center gap-1 w-full max-w-xs">
+                <div className={`border rounded-lg px-3 py-2 text-xs text-center w-full ${
+                  step.highlight
+                    ? 'border-orange-400/40 text-orange-400 font-semibold bg-orange-400/5'
+                    : 'border-orange-400/15 text-muted'
+                }`}>
+                  {step.text}
+                </div>
+                {i < 3 && <span className="text-orange-400/50 text-xs">↓</span>}
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Merge connector */}
+        <div className="flex mx-12 md:mx-24">
+          <div className="flex-1 h-4 border-l-2 border-t-2 border-[#0052ff]/30 rounded-tl-lg"></div>
+          <div className="flex-1 h-4 border-r-2 border-t-2 border-[#0052ff]/30 rounded-tr-lg"></div>
+        </div>
+        <div className="flex justify-center">
+          <div className="w-px h-3 bg-[#0052ff]/30"></div>
+        </div>
+
+        {/* Output node */}
+        <div className="flex justify-center px-6 pb-6 pt-0">
+          <div className="bg-[#0052ff]/10 border border-[#0052ff]/30 rounded-xl px-6 py-3 text-center">
+            <p className="font-bold text-[#0052ff]">NAV per BSTR rises ↑</p>
+            <p className="text-xs text-muted mt-0.5">more BEAN held · less BSTR in circulation</p>
+          </div>
+        </div>
+
       </div>
     </section>
   )
