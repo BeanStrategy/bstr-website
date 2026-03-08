@@ -25,13 +25,13 @@ export default function HowItWorks({ apr }: HowItWorksProps) {
       number: '03',
       title: aprTitle,
       description:
-        'All BEAN is staked on MineBean protocol. BEAN staking yield compounds back into the treasury every 4 hours — growing holdings automatically. Staking also generates separate ETH rewards.',
+        'All BEAN is staked on MineBean protocol. BEAN staking yield compounds back into the treasury every 4 hours — growing holdings automatically.',
     },
     {
       number: '04',
-      title: 'ETH Yield Burns BSTR',
+      title: 'Excess ETH Burns BSTR',
       description:
-        'A portion of ETH staking rewards buys BSTR on the open market and permanently burns it. Less supply and more BEAN means higher NAV per BSTR.',
+        'ETH above the operating reserve floor is used to buy BSTR on the open market and permanently burn it. Less supply and more BEAN means higher NAV per BSTR.',
     },
   ]
 
@@ -100,7 +100,7 @@ export default function HowItWorks({ apr }: HowItWorksProps) {
             {/* Mobile: vertical */}
             <div className="flex flex-col gap-1 sm:hidden text-sm">
               {[
-                'ETH staking yield',
+                'ETH reserve surplus',
                 'buy BSTR',
                 'burn forever',
                 'supply ↓',
@@ -115,7 +115,7 @@ export default function HowItWorks({ apr }: HowItWorksProps) {
             </div>
             {/* Desktop: horizontal */}
             <div className="hidden sm:flex flex-wrap items-center gap-2 text-sm text-muted">
-              <span className="card px-3 py-1.5">ETH staking yield</span>
+              <span className="card px-3 py-1.5">ETH reserve surplus</span>
               <span className="text-[#0052ff]">→</span>
               <span className="card px-3 py-1.5">buy BSTR</span>
               <span className="text-[#0052ff]">→</span>

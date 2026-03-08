@@ -207,16 +207,16 @@ export default async function HomePage() {
         <div className="card p-6 mb-6">
           <h3 className="font-semibold mb-1">BSTR Buyback &amp; Burn</h3>
           <p className="text-muted text-sm mb-5">
-            A second flywheel runs alongside BEAN accumulation. Staking yield funds automatic BSTR
+            A second flywheel runs alongside BEAN accumulation. Excess ETH above the operating reserve funds automatic BSTR
             purchases — permanently removing supply every 12 hours.
           </p>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             <div>
               <p className="text-xs text-muted uppercase tracking-wide mb-2">Source</p>
-              <p className="text-sm text-white font-medium mb-1">ETH staking rewards</p>
+              <p className="text-sm text-white font-medium mb-1">ETH reserve surplus</p>
               <p className="text-sm text-muted">
-                MineBean staking pays ETH yield on top of BEAN yield. 30% of ETH above the
-                operating reserve goes directly to buybacks.
+                The treasury maintains an ETH operating reserve. 30% of any ETH above the
+                reserve floor goes directly to buybacks.
               </p>
             </div>
             <div>
