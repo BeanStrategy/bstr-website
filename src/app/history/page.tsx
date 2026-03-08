@@ -1,4 +1,4 @@
-import { fetchUserHistory, fetchBeanStats } from '@/lib/api'
+import { fetchUserHistory, fetchBeanStats, fetchUserStaking } from '@/lib/api'
 import { fetchBstrBurned, fetchBurnHistory } from '@/lib/onchain'
 import { timeAgo, formatBEAN, formatUSD } from '@/lib/utils'
 import { mockBurnHistory } from '@/lib/mock-data'
@@ -40,20 +40,23 @@ export default async function HistoryPage() {
   let beanPriceUsd = 0
   let bstrBurned = 0
   let burnHistory: BurnEvent[] = []
+  let pendingBean = 0
 
   try {
     const fetches: Promise<unknown>[] = [
       fetchUserHistory(AGENT_ADDRESS, 200),
       fetchBeanStats(),
+      fetchUserStaking(AGENT_ADDRESS),
     ]
     if (BSTR_ADDRESS) {
       fetches.push(fetchBstrBurned(BSTR_ADDRESS))
       fetches.push(fetchBurnHistory(BSTR_ADDRESS))
     }
 
-    const [h, s, b, bh] = await Promise.allSettled(fetches)
+    const [h, s, st, b, bh] = await Promise.allSettled(fetches)
     if (h.status === 'fulfilled') history = [GENESIS_EVENT, ...(h.value as HistoryItem[]).filter(e => e.txHash !== GENESIS_TX)]
     if (s.status === 'fulfilled') beanPriceUsd = (s.value as { beanPriceUsd: number }).beanPriceUsd
+    if (st.status === 'fulfilled') pendingBean = parseFloat((st.value as { pendingRewardsFormatted?: string })?.pendingRewardsFormatted ?? '0')
     if (b && b.status === 'fulfilled') bstrBurned = b.value as number
     if (bh && bh.status === 'fulfilled') burnHistory = bh.value as BurnEvent[]
   } catch {}
@@ -101,6 +104,12 @@ export default async function HistoryPage() {
                 <span className="text-accent">+ Earned</span>{' '}
                 <span className="font-mono">{formatBEAN(earnedBean)}</span>
               </p>
+              {pendingBean > 0 && (
+                <p className="text-xs text-muted">
+                  <span className="text-yellow-400/70">~ Pending</span>{' '}
+                  <span className="font-mono">{formatBEAN(pendingBean)}</span>
+                </p>
+              )}
             </div>
           </div>
           <div className="card p-5">
