@@ -86,33 +86,31 @@ export default async function HistoryPage() {
         </div>
 
         {/* Summary */}
-        <div className="grid grid-cols-2 md:grid-cols-3 gap-4 mb-8">
-          <div className="card p-5">
-            <p className="text-muted text-sm mb-1">Total BEAN Held</p>
-            <p className="stat-number text-2xl font-bold text-[#0052ff] flex items-center gap-2">
-              {formatBEAN(totalBeanEarned)} <BeanIcon size={20} />
-            </p>
-            <p className="text-muted text-sm mb-3">{formatUSD(totalBeanEarned * beanPriceUsd)}</p>
-            <div className="flex flex-col gap-1 border-t border-border pt-2">
-              <p className="text-xs text-muted flex justify-between">
-                <span className="text-white/60">Seeded</span>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-8">
+          <div className="card p-5 flex items-center justify-between gap-4">
+            <div className="min-w-0">
+              <p className="text-muted text-sm mb-1">Total BEAN Held</p>
+              <p className="stat-number text-2xl font-bold text-[#0052ff] flex items-center gap-2">
+                {formatBEAN(totalBeanEarned)} <BeanIcon size={20} />
+              </p>
+              <p className="text-muted text-sm">{formatUSD(totalBeanEarned * beanPriceUsd)}</p>
+            </div>
+            <div className="text-right flex flex-col gap-1 shrink-0">
+              <p className="text-xs text-muted">
+                <span className="text-white/60">Seeded</span>{' '}
                 <span className="font-mono">{formatBEAN(seedBean)}</span>
               </p>
-              <p className="text-xs text-muted flex justify-between">
-                <span className="text-accent">+ Earned</span>
+              <p className="text-xs text-muted">
+                <span className="text-accent">+ Earned</span>{' '}
                 <span className="font-mono">{formatBEAN(earnedBean)}</span>
               </p>
               {pendingBean > 0 && (
-                <p className="text-xs text-muted flex justify-between">
-                  <span className="text-yellow-400/70">~ Pending</span>
+                <p className="text-xs text-muted">
+                  <span className="text-yellow-400/70">~ Pending</span>{' '}
                   <span className="font-mono">{formatBEAN(pendingBean)}</span>
                 </p>
               )}
             </div>
-          </div>
-          <div className="card p-5">
-            <p className="text-muted text-sm mb-1">Total Events</p>
-            <p className="stat-number text-2xl font-bold">{history.length}</p>
           </div>
           <div className="card p-5">
             <p className="text-muted text-sm mb-1">BEAN Price</p>
