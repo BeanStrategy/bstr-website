@@ -53,20 +53,32 @@ export default function Footer() {
           </div>
         </div>
 
-        <div className="border-t border-border pt-6 flex flex-col md:flex-row justify-between items-center gap-4">
-          <p className="text-muted text-xs">
-            BeanStrategy is an autonomous agent protocol. Not financial advice.
+        <div className="border-t border-border pt-6 space-y-4">
+          <p className="text-muted text-xs leading-relaxed">
+            <span className="text-white/60 font-semibold">Disclaimer:</span> BeanStrategy is an experimental autonomous protocol.
+            Nothing on this site constitutes financial, investment, or legal advice. Cryptocurrency assets are highly volatile and
+            speculative. You may lose some or all of any funds involved. Past performance is not indicative of future results.
+            The protocol operates autonomously — there is no team, no guarantees of returns, and no recourse in the event of
+            smart contract failure, exploits, or loss of funds. Do your own research (DYOR) before interacting with any on-chain
+            protocol. Never risk funds you cannot afford to lose.
+            BeanStrategy is an independent project and is not affiliated with, endorsed by, or associated
+            with Bankr, BankrBot, OpenClaw, or MineBean in any way.
           </p>
-          <p className="text-muted text-xs">
-            Built on{' '}
-            <a href="https://base.org" target="_blank" rel="noopener noreferrer" className="hover:text-white transition-colors">
-              Base
-            </a>{' '}
-            ·{' '}
-            <a href="https://minebean.com" target="_blank" rel="noopener noreferrer" className="hover:text-white transition-colors">
-              Powered by MineBean
-            </a>
-          </p>
+          <div className="flex flex-col md:flex-row justify-between items-center gap-4">
+            <p className="text-muted text-xs">
+              BeanStrategy is an autonomous agent protocol. Not financial advice.
+            </p>
+            <p className="text-muted text-xs">
+              Built on{' '}
+              <a href="https://base.org" target="_blank" rel="noopener noreferrer" className="hover:text-white transition-colors">
+                Base
+              </a>{' '}
+              ·{' '}
+              <a href="https://minebean.com" target="_blank" rel="noopener noreferrer" className="hover:text-white transition-colors">
+                Powered by MineBean
+              </a>
+            </p>
+          </div>
         </div>
       </div>
     </footer>
