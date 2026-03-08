@@ -91,24 +91,47 @@ export default function HowItWorks({ apr }: HowItWorksProps) {
             <p className="text-xs text-[#22c55e] uppercase tracking-wide font-medium text-center mb-1">
               BEAN Accumulation
             </p>
-            {[
-              { text: <span className="flex items-center justify-center gap-1.5">Swap WETH → <BeanIcon size={13} /> BEAN</span> },
-              { text: 'Stake on MineBean' },
-              { text: `Earn ${aprLabel}` },
-              { text: 'Compounds every 4h' },
-              { text: 'Treasury grows ↑', highlight: true },
-            ].map((step, i) => (
-              <div key={i} className="flex flex-col items-center gap-1 w-full max-w-xs">
-                <div className={`border rounded-lg px-3 py-2 text-xs text-center w-full ${
-                  step.highlight
-                    ? 'border-[#22c55e]/40 text-[#22c55e] font-semibold bg-[#22c55e]/5'
-                    : 'border-[#22c55e]/15 text-muted'
-                }`}>
-                  {step.text}
-                </div>
-                {i < 4 && <span className="text-[#22c55e]/50 text-xs">↓</span>}
+
+            {/* Step 0: fee-driven input */}
+            <div className="flex flex-col items-center gap-1 w-full max-w-xs">
+              <div className="border border-[#22c55e]/15 rounded-lg px-3 py-2 text-xs text-center w-full text-muted">
+                <span className="flex items-center justify-center gap-1.5">Swap WETH → <BeanIcon size={13} /> BEAN</span>
               </div>
-            ))}
+              <span className="text-[#22c55e]/50 text-xs">↓</span>
+            </div>
+
+            {/* Steps 1–3: self-compounding loop */}
+            <div className="flex w-full max-w-xs">
+              <div className="flex flex-col items-center gap-1 flex-1 min-w-0">
+                {[
+                  'Stake on MineBean',
+                  `Earn ${aprLabel}`,
+                  'Compounds every 4h',
+                ].map((text, i) => (
+                  <div key={i} className="flex flex-col items-center gap-1 w-full">
+                    <div className="border border-[#22c55e]/15 rounded-lg px-3 py-2 text-xs text-center w-full text-muted">
+                      {text}
+                    </div>
+                    {i < 2 && <span className="text-[#22c55e]/50 text-xs">↓</span>}
+                  </div>
+                ))}
+              </div>
+              {/* Loop-back bracket */}
+              <div className="flex flex-col items-center justify-center ml-2 pl-2 border-l-2 border-t-2 border-b-2 border-dashed border-[#22c55e]/30 rounded-r-lg flex-shrink-0">
+                <span className="text-[#22c55e]/60 text-xs px-1 whitespace-nowrap" style={{ writingMode: 'vertical-rl', transform: 'rotate(180deg)' }}>
+                  ↺ yield reinvests
+                </span>
+              </div>
+            </div>
+
+            <span className="text-[#22c55e]/50 text-xs">↓</span>
+
+            {/* Step 4: output */}
+            <div className="w-full max-w-xs">
+              <div className="border border-[#22c55e]/40 text-[#22c55e] font-semibold bg-[#22c55e]/5 rounded-lg px-3 py-2 text-xs text-center w-full">
+                Treasury grows ↑
+              </div>
+            </div>
           </div>
 
           {/* Right: BSTR burn */}
