@@ -23,7 +23,7 @@ function buildChartData(history: HistoryItem[]): ChartPoint[] {
 
   for (const item of sorted) {
     const beanAmount = parseFloat(item.beanRewardFormatted ?? item.amountFormatted ?? '0')
-    if (beanAmount > 0 && ['checkpointed', 'stakeDeposited', 'yieldCompounded', 'yieldClaimed'].includes(item.type)) {
+    if (beanAmount > 0 && ['checkpointed', 'claimedBEAN', 'yieldCompounded', 'yieldClaimed'].includes(item.type)) {
       cumulative += beanAmount
       const date = new Date(item.timestamp * 1000).toLocaleDateString('en-US', {
         month: 'short',

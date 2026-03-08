@@ -44,6 +44,7 @@ export default async function HistoryPage() {
   let bstrBurned = 0
   let burnHistory: BurnEvent[] = []
   let pendingBean = 0
+  let stakedBean = 0
 
   try {
     const fetches: Promise<unknown>[] = [
@@ -65,7 +66,11 @@ export default async function HistoryPage() {
       volume24h = stats.volume24h
       liquidity = stats.liquidity
     }
-    if (st.status === 'fulfilled') pendingBean = parseFloat((st.value as { pendingRewards?: string })?.pendingRewards ?? '0')
+    if (st.status === 'fulfilled') {
+      const staking = st.value as { balance?: string; pendingRewards?: string }
+      stakedBean = parseFloat(staking?.balance ?? '0')
+      pendingBean = parseFloat(staking?.pendingRewards ?? '0')
+    }
     if (b && b.status === 'fulfilled') bstrBurned = b.value as number
     if (bh && bh.status === 'fulfilled') burnHistory = bh.value as BurnEvent[]
   } catch {}
@@ -76,11 +81,9 @@ export default async function HistoryPage() {
   }
 
   const seedBean = parseFloat(GENESIS_EVENT.amountFormatted ?? '0')
-  const earnedBean = history.reduce((sum, item) => {
-    if (item.type === 'genesis') return sum
-    return sum + parseFloat(item.beanRewardFormatted ?? item.amountFormatted ?? '0')
-  }, 0)
-  const totalBeanEarned = seedBean + earnedBean
+  // Use live staked balance to avoid double-counting claimYield + deposit events in history
+  const totalBeanEarned = stakedBean > 0 ? stakedBean + pendingBean : seedBean
+  const earnedBean = Math.max(0, totalBeanEarned - seedBean)
 
   return (
     <>
