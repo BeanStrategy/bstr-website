@@ -123,7 +123,7 @@ export default async function StakingPage({
           <p className="text-muted text-sm mb-2">Current Position</p>
           {stakedBean > 0 ? (
             <>
-              <p className="stat-number text-4xl md:text-5xl font-bold text-accent mb-1 flex items-center gap-3">
+              <p className="stat-number text-4xl md:text-5xl font-bold text-[#0052ff] mb-1 flex items-center gap-3">
                 {formatBEAN(stakedBean)} <BeanIcon size={36} />
               </p>
               <p className="text-muted text-lg md:text-xl mb-4">{formatUSD(treasuryUsd)}</p>
