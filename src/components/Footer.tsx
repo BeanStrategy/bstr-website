@@ -36,6 +36,12 @@ export default function Footer() {
               <a href="https://x.com/BeanStrategy" target="_blank" rel="noopener noreferrer" className="block hover:text-white transition-colors">
                 Twitter / X
               </a>
+              <span className="relative group inline-block cursor-not-allowed">
+                <span className="text-muted/50 select-none text-sm">Telegram</span>
+                <span className="absolute -top-7 left-0 text-xs text-muted bg-card border border-border px-2 py-0.5 rounded whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">
+                  Coming soon
+                </span>
+              </span>
               <a href="https://minebean.com" target="_blank" rel="noopener noreferrer" className="block hover:text-white transition-colors">
                 MineBean Protocol
               </a>
