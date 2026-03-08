@@ -35,14 +35,14 @@ export default function Header() {
           <a href="https://minebean.com" target="_blank" rel="noopener noreferrer" className="hover:text-white transition-colors">
             MineBean
           </a>
-          <a
-            href="https://app.uniswap.org"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="bg-[#0052ff] text-white font-semibold px-4 py-1.5 rounded-full text-xs hover:bg-[#0041cc] transition-colors"
-          >
-            Buy BSTR
-          </a>
+          <span className="relative group">
+            <span className="bg-[#0052ff]/40 text-white/50 font-semibold px-4 py-1.5 rounded-full text-xs cursor-not-allowed select-none">
+              Buy BSTR
+            </span>
+            <span className="absolute -bottom-7 left-1/2 -translate-x-1/2 text-xs text-muted bg-card border border-border px-2 py-0.5 rounded whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">
+              Coming soon
+            </span>
+          </span>
         </nav>
 
         {/* Mobile hamburger */}
@@ -77,14 +77,9 @@ export default function Header() {
           <a href="https://minebean.com" target="_blank" rel="noopener noreferrer" className="hover:text-white transition-colors">
             MineBean
           </a>
-          <a
-            href="https://app.uniswap.org"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="bg-[#0052ff] text-white font-semibold px-4 py-2 rounded-full text-xs hover:bg-[#0041cc] transition-colors text-center"
-          >
-            Buy BSTR
-          </a>
+          <span className="bg-[#0052ff]/40 text-white/50 font-semibold px-4 py-2 rounded-full text-xs cursor-not-allowed select-none text-center">
+            Buy BSTR — Coming Soon
+          </span>
         </div>
       )}
     </header>
