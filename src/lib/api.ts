@@ -91,5 +91,5 @@ export async function fetchUserHistory(address: string, limit = 50): Promise<His
   const res = await fetch(`${API}/user/${address}/history?limit=${limit}`, FETCH_OPTS)
   if (!res.ok) throw new Error(`fetchUserHistory: ${res.status}`)
   const data = await res.json()
-  return Array.isArray(data) ? data : data.items ?? []
+  return Array.isArray(data) ? data : data.history ?? data.items ?? []
 }
