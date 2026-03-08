@@ -53,11 +53,31 @@ export default function HowItWorks({ apr }: HowItWorksProps) {
       </div>
 
       <div className="mt-8 card p-6 border-[#0052ff]/20">
-        <h3 className="font-semibold mb-4 text-[#0052ff]">The Two Flywheels</h3>
-        <div className="space-y-3">
+        <h3 className="font-semibold mb-5 text-[#0052ff]">The Two Flywheels</h3>
+        <div className="space-y-6">
+
+          {/* Flywheel 1 */}
           <div>
-            <p className="text-xs text-muted uppercase tracking-wide mb-2">BEAN Accumulation</p>
-            <div className="flex flex-wrap items-center gap-2 text-sm text-muted">
+            <p className="text-xs text-muted uppercase tracking-wide mb-3">BEAN Accumulation</p>
+            {/* Mobile: vertical */}
+            <div className="flex flex-col gap-1 sm:hidden text-sm">
+              {[
+                <span key="1" className="card px-3 py-1.5 text-muted">BSTR volume</span>,
+                <span key="2" className="card px-3 py-1.5 flex items-center gap-1.5 text-muted">fees → <BeanIcon size={14} /></span>,
+                <span key="3" className="card px-3 py-1.5 text-muted">stake @ {aprLabel}</span>,
+                <span key="4" className="card px-3 py-1.5 text-muted">yield compounds</span>,
+                <span key="5" className="card px-3 py-1.5 text-muted">more BEAN</span>,
+                <span key="6" className="card px-3 py-1.5 text-muted">NAV rises</span>,
+              ].map((step, i) => (
+                <div key={i} className="flex flex-col items-start">
+                  {step}
+                  {i < 5 && <span className="text-[#0052ff] text-xs pl-3">↓</span>}
+                </div>
+              ))}
+              <span className="text-white text-sm pl-1">↺ repeat</span>
+            </div>
+            {/* Desktop: horizontal */}
+            <div className="hidden sm:flex flex-wrap items-center gap-2 text-sm text-muted">
               <span className="card px-3 py-1.5">BSTR volume</span>
               <span className="text-[#0052ff]">→</span>
               <span className="card px-3 py-1.5 flex items-center gap-1.5">fees → <BeanIcon size={16} /></span>
@@ -73,9 +93,28 @@ export default function HowItWorks({ apr }: HowItWorksProps) {
               <span className="text-white">repeat</span>
             </div>
           </div>
+
+          {/* Flywheel 2 */}
           <div>
-            <p className="text-xs text-muted uppercase tracking-wide mb-2">BSTR Buyback &amp; Burn</p>
-            <div className="flex flex-wrap items-center gap-2 text-sm text-muted">
+            <p className="text-xs text-muted uppercase tracking-wide mb-3">BSTR Buyback &amp; Burn</p>
+            {/* Mobile: vertical */}
+            <div className="flex flex-col gap-1 sm:hidden text-sm">
+              {[
+                'ETH staking yield',
+                'buy BSTR',
+                'burn forever',
+                'supply ↓',
+                'NAV rises',
+              ].map((step, i) => (
+                <div key={i} className="flex flex-col items-start">
+                  <span className="card px-3 py-1.5 text-muted">{step}</span>
+                  {i < 4 && <span className="text-[#0052ff] text-xs pl-3">↓</span>}
+                </div>
+              ))}
+              <span className="text-white text-sm pl-1">↺ repeat</span>
+            </div>
+            {/* Desktop: horizontal */}
+            <div className="hidden sm:flex flex-wrap items-center gap-2 text-sm text-muted">
               <span className="card px-3 py-1.5">ETH staking yield</span>
               <span className="text-[#0052ff]">→</span>
               <span className="card px-3 py-1.5">buy BSTR</span>
@@ -89,6 +128,7 @@ export default function HowItWorks({ apr }: HowItWorksProps) {
               <span className="text-white">repeat</span>
             </div>
           </div>
+
         </div>
       </div>
     </section>
