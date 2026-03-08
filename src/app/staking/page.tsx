@@ -132,12 +132,7 @@ export default async function StakingPage({
                   Pending rewards:{' '}
                   <span className="text-white font-mono inline-flex items-center gap-1">{formatBEAN(pendingRewards, 5)} <BeanIcon size={14} /></span>
                 </span>
-                <span className="text-muted">
-                  Compound ready:{' '}
-                  <span className={userStaking?.canCompound ? 'text-accent' : 'text-white'}>
-                    {userStaking?.canCompound ? 'Yes' : 'No'}
-                  </span>
-                </span>
+
                 <span className="text-muted">
                   TVL share:{' '}
                   <span className="text-white font-mono">{tvlSharePct.toFixed(3)}%</span>
