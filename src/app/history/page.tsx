@@ -81,8 +81,8 @@ export default async function HistoryPage() {
   }
 
   const seedBean = parseFloat(GENESIS_EVENT.amountFormatted ?? '0')
-  // Use live staked balance — avoids double-counting claimYield + deposit events in history
-  const totalBeanEarned = stakedBean > 0 ? stakedBean + pendingBean : seedBean
+  // Total held = staked only (pending is not held until claimed + restaked)
+  const totalBeanEarned = stakedBean > 0 ? stakedBean : seedBean
   // earnedBean = yield already compounded into staked balance (excludes pending)
   const earnedBean = Math.max(0, stakedBean - seedBean)
 
