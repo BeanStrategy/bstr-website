@@ -152,7 +152,14 @@ export default async function HomePage() {
             {/* Right: key protocol metrics */}
             <div className="flex flex-row md:flex-col gap-8 md:gap-6 md:min-w-[160px] shrink-0">
               <div>
-                <p className="text-xs text-muted uppercase tracking-wide mb-1">Staking APR</p>
+                <div className="flex items-center justify-between gap-3 mb-1">
+                  <p className="text-xs text-muted uppercase tracking-wide">Staking APR</p>
+                  {apr > 0 && (
+                    <span className="text-xs text-accent border border-accent/40 bg-accent/5 px-2 py-0.5 rounded-full">
+                      Live
+                    </span>
+                  )}
+                </div>
                 <p className="text-3xl md:text-4xl font-bold text-accent">
                   {apr > 0 ? `${apr.toFixed(0)}%` : '—'}
                 </p>
