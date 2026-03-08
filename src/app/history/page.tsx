@@ -56,7 +56,7 @@ export default async function HistoryPage() {
     const [h, s, st, b, bh] = await Promise.allSettled(fetches)
     if (h.status === 'fulfilled') history = [GENESIS_EVENT, ...(h.value as HistoryItem[]).filter(e => e.txHash !== GENESIS_TX)]
     if (s.status === 'fulfilled') beanPriceUsd = (s.value as { beanPriceUsd: number }).beanPriceUsd
-    if (st.status === 'fulfilled') pendingBean = parseFloat((st.value as { pendingRewardsFormatted?: string })?.pendingRewardsFormatted ?? '0')
+    if (st.status === 'fulfilled') pendingBean = parseFloat((st.value as { pendingRewards?: string })?.pendingRewards ?? '0')
     if (b && b.status === 'fulfilled') bstrBurned = b.value as number
     if (bh && bh.status === 'fulfilled') burnHistory = bh.value as BurnEvent[]
   } catch {}
