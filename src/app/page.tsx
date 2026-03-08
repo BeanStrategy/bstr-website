@@ -203,8 +203,8 @@ export default async function HomePage() {
           />
         </div>
 
-        {/* Buyback & Burn explainer */}
-        <div className="card p-6 mb-6">
+        {/* Buyback & Burn explainer — shown after token launch */}
+        {hasBstr && <div className="card p-6 mb-6">
           <h3 className="font-semibold mb-1">BSTR Buyback &amp; Burn</h3>
           <p className="text-muted text-sm mb-5">
             A second flywheel runs alongside BEAN accumulation. 20% of BSTR trading fees are used to buy and permanently burn BSTR — reducing supply every time the token trades.
@@ -239,7 +239,7 @@ export default async function HomePage() {
               </p>
             </div>
           </div>
-        </div>
+        </div>}
 
         {/* Accumulation chart */}
         <div className="card p-6 mb-6">
