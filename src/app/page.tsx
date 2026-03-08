@@ -207,16 +207,15 @@ export default async function HomePage() {
         <div className="card p-6 mb-6">
           <h3 className="font-semibold mb-1">BSTR Buyback &amp; Burn</h3>
           <p className="text-muted text-sm mb-5">
-            A second flywheel runs alongside BEAN accumulation. Excess ETH above the operating reserve funds automatic BSTR
-            purchases — permanently removing supply every 12 hours.
+            A second flywheel runs alongside BEAN accumulation. 20% of BSTR trading fees are used to buy and permanently burn BSTR — reducing supply every time the token trades.
           </p>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             <div>
               <p className="text-xs text-muted uppercase tracking-wide mb-2">Source</p>
-              <p className="text-sm text-white font-medium mb-1">ETH reserve surplus</p>
+              <p className="text-sm text-white font-medium mb-1">20% of trading fees</p>
               <p className="text-sm text-muted">
-                The treasury maintains an ETH operating reserve. 30% of any ETH above the
-                reserve floor goes directly to buybacks.
+                Every BSTR trade generates a 1.2% fee. 20% of the treasury's share is automatically
+                used to buy and burn BSTR — every single trade.
               </p>
             </div>
             <div>

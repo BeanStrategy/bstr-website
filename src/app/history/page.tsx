@@ -150,7 +150,7 @@ export default async function HistoryPage() {
             <div>
               <h3 className="font-semibold">BSTR Buyback &amp; Burn</h3>
               <p className="text-muted text-sm mt-0.5">
-                Excess ETH above the operating reserve used to buy and permanently burn BSTR
+                20% of BSTR trading fees used to buy and permanently burn BSTR
               </p>
             </div>
             {bstrBurned > 0 && (
@@ -164,9 +164,8 @@ export default async function HistoryPage() {
           {!BSTR_ADDRESS && !MOCK ? (
             <div className="p-8">
               <p className="text-muted text-sm mb-4">
-                BSTR buyback and burn activity will appear here after token launch. Every 12 hours,
-                30% of ETH above the operating reserve floor is used to buy BSTR at
-                market price and send it to the burn address permanently.
+                BSTR buyback and burn activity will appear here after token launch. Every time fees are collected,
+                20% of the WETH is used to buy BSTR at market price and send it to the burn address permanently.
               </p>
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
                 <div className="bg-card/50 rounded-lg p-4 border border-border">
@@ -175,7 +174,7 @@ export default async function HistoryPage() {
                 </div>
                 <div className="bg-card/50 rounded-lg p-4 border border-border">
                   <p className="text-muted mb-1">Source</p>
-                  <p className="font-medium">30% of ETH above reserve floor</p>
+                  <p className="font-medium">20% of WETH trading fees</p>
                 </div>
                 <div className="bg-card/50 rounded-lg p-4 border border-border">
                   <p className="text-muted mb-1">Destination</p>
