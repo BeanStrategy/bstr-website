@@ -81,9 +81,10 @@ export default async function HistoryPage() {
   }
 
   const seedBean = parseFloat(GENESIS_EVENT.amountFormatted ?? '0')
-  // Use live staked balance to avoid double-counting claimYield + deposit events in history
+  // Use live staked balance — avoids double-counting claimYield + deposit events in history
   const totalBeanEarned = stakedBean > 0 ? stakedBean + pendingBean : seedBean
-  const earnedBean = Math.max(0, totalBeanEarned - seedBean)
+  // earnedBean = yield already compounded into staked balance (excludes pending)
+  const earnedBean = Math.max(0, stakedBean - seedBean)
 
   return (
     <>
@@ -112,10 +113,12 @@ export default async function HistoryPage() {
                 <span className="text-white/60">Seeded</span>{' '}
                 <span className="font-mono">{formatBEAN(seedBean)}</span>
               </p>
-              <p className="text-xs text-muted">
-                <span className="text-accent">+ Earned</span>{' '}
-                <span className="font-mono">{formatBEAN(earnedBean)}</span>
-              </p>
+              {earnedBean > 0 && (
+                <p className="text-xs text-muted">
+                  <span className="text-accent">+ Earned</span>{' '}
+                  <span className="font-mono">{formatBEAN(earnedBean)}</span>
+                </p>
+              )}
               {pendingBean > 0 && (
                 <p className="text-xs text-muted">
                   <span className="text-yellow-400/70">~ Pending</span>{' '}
