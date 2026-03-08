@@ -15,7 +15,16 @@ const MOCK = process.env.MOCK_DATA === 'true'
 
 export const revalidate = 60
 
+const GENESIS_TX = '0x22cc7ac8e092bc9ae6b85efa897b9775dfd994e22264cc8e611dc8ac6bf6d435'
+const GENESIS_EVENT: HistoryItem = {
+  type: 'genesis',
+  amountFormatted: '4.728176',
+  timestamp: 1772928960,
+  txHash: GENESIS_TX,
+}
+
 const EVENT_LABELS: Record<string, { label: string; color: string }> = {
+  genesis: { label: 'Seed purchase', color: 'text-[#0052ff]' },
   checkpointed: { label: 'Round won', color: 'text-accent' },
   claimedETH: { label: 'ETH claimed', color: 'text-blue-400' },
   claimedBEAN: { label: 'BEAN claimed', color: 'text-green-400' },
@@ -43,7 +52,7 @@ export default async function HistoryPage() {
     }
 
     const [h, s, b, bh] = await Promise.allSettled(fetches)
-    if (h.status === 'fulfilled') history = h.value as HistoryItem[]
+    if (h.status === 'fulfilled') history = [GENESIS_EVENT, ...(h.value as HistoryItem[]).filter(e => e.txHash !== GENESIS_TX)]
     if (s.status === 'fulfilled') beanPriceUsd = (s.value as { beanPriceUsd: number }).beanPriceUsd
     if (b && b.status === 'fulfilled') bstrBurned = b.value as number
     if (bh && bh.status === 'fulfilled') burnHistory = bh.value as BurnEvent[]

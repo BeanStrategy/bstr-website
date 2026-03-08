@@ -12,16 +12,25 @@ export const revalidate = 60
 const AGENT_ADDRESS = process.env.NEXT_PUBLIC_AGENT_ADDRESS ?? ''
 const PAGE_SIZE = 25
 
-const STAKING_TYPES = ['stakeDeposited', 'yieldCompounded', 'yieldClaimed', 'stakeWithdrawn']
+const GENESIS_TX = '0x22cc7ac8e092bc9ae6b85efa897b9775dfd994e22264cc8e611dc8ac6bf6d435'
+const GENESIS_EVENT: HistoryItem = {
+  type: 'genesis',
+  amountFormatted: '4.728176',
+  timestamp: 1772928960,
+  txHash: GENESIS_TX,
+}
+
+const STAKING_TYPES = ['genesis', 'stakeDeposited', 'yieldCompounded', 'yieldClaimed', 'stakeWithdrawn']
 
 const FILTERS: Record<string, string[]> = {
   all: STAKING_TYPES,
-  deposits: ['stakeDeposited'],
+  deposits: ['genesis', 'stakeDeposited'],
   compounds: ['yieldCompounded'],
   claims: ['yieldClaimed'],
 }
 
 const EVENT_META: Record<string, { label: string; color: string }> = {
+  genesis: { label: 'Seed purchase', color: 'text-[#0052ff]' },
   stakeDeposited: { label: 'Staked', color: 'text-accent' },
   yieldCompounded: { label: 'Compounded', color: 'text-purple-400' },
   yieldClaimed: { label: 'Yield Claimed', color: 'text-green-400' },
@@ -45,7 +54,9 @@ async function getStakingData() {
   return {
     userStaking: userStaking.status === 'fulfilled' ? userStaking.value : null,
     stakingGlobal: stakingGlobal.status === 'fulfilled' ? stakingGlobal.value : null,
-    history: history.status === 'fulfilled' ? history.value : [],
+    history: history.status === 'fulfilled'
+      ? [GENESIS_EVENT, ...(history.value as HistoryItem[]).filter(e => e.txHash !== GENESIS_TX)]
+      : [GENESIS_EVENT],
     stats: stats.status === 'fulfilled' ? stats.value : null,
   }
 }
