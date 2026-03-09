@@ -6,7 +6,7 @@ const EVENT_LABELS: Record<string, { label: string; color: string }> = {
   checkpointed: { label: 'Round won', color: 'text-accent' },
   claimedETH: { label: 'ETH claimed', color: 'text-blue-400' },
   claimedBEAN: { label: 'BEAN claimed', color: 'text-green-400' },
-  stakeDeposited: { label: 'BEAN staked', color: 'text-accent' },
+  stakeDeposited: { label: 'BEAN Purchased', color: 'text-[#0052ff]' },
   stakeWithdrawn: { label: 'Unstaked', color: 'text-red-400' },
   yieldClaimed: { label: 'Yield claimed', color: 'text-purple-400' },
   yieldCompounded: { label: 'Compounded', color: 'text-accent' },
