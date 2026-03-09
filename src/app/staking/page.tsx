@@ -92,13 +92,13 @@ export default async function StakingPage({
   const pageEvents = filteredEvents.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE)
 
   // Lifetime summary stats (always across all events)
+  // yieldCompounded = compound() path; yieldClaimed = claimYield()+deposit() fallback path
+  // Both represent yield reinvested into the position — count together
   const totalCompounded = allStakingEvents
-    .filter((e) => e.type === 'yieldCompounded')
+    .filter((e) => e.type === 'yieldCompounded' || e.type === 'yieldClaimed')
     .reduce((sum, e) => sum + parseFloat(e.amountFormatted ?? e.beanRewardFormatted ?? '0'), 0)
-  const totalClaimed = allStakingEvents
-    .filter((e) => e.type === 'yieldClaimed')
-    .reduce((sum, e) => sum + parseFloat(e.beanRewardFormatted ?? e.amountFormatted ?? '0'), 0)
-  const compoundCount = allStakingEvents.filter((e) => e.type === 'yieldCompounded').length
+  const compoundCount = allStakingEvents
+    .filter((e) => e.type === 'yieldCompounded' || e.type === 'yieldClaimed').length
 
   return (
     <>
@@ -193,11 +193,11 @@ export default async function StakingPage({
             <p className="text-muted text-sm">{compoundCount} compound events</p>
           </div>
           <div className="card p-5">
-            <p className="text-muted text-sm mb-1">Total Yield Claimed</p>
-            <p className="stat-number text-2xl font-bold text-[#0052ff] flex items-center gap-2">
-              {totalClaimed > 0 ? `+${formatBEAN(totalClaimed)}` : '—'} <BeanIcon size={20} />
+            <p className="text-muted text-sm mb-1">Yield at Current Price</p>
+            <p className="stat-number text-2xl font-bold text-[#0052ff]">
+              {totalCompounded > 0 ? formatUSD(totalCompounded * beanPriceUsd) : '—'}
             </p>
-            <p className="text-muted text-sm">{formatUSD(totalClaimed * beanPriceUsd)}</p>
+            <p className="text-muted text-sm">{compoundCount} yield events</p>
           </div>
           <div className="card p-5">
             <p className="text-muted text-sm mb-1">Total BEAN Staked Events</p>
