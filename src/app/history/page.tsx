@@ -18,7 +18,7 @@ const EVENT_LABELS: Record<string, { label: string; color: string }> = {
   checkpointed: { label: 'Round won', color: 'text-accent' },
   claimedETH: { label: 'ETH claimed', color: 'text-blue-400' },
   claimedBEAN: { label: 'BEAN claimed', color: 'text-green-400' },
-  stakeDeposited: { label: 'BEAN staked', color: 'text-accent' },
+  stakeDeposited: { label: 'BEAN Purchased', color: 'text-[#0052ff]' },
   stakeWithdrawn: { label: 'Unstaked', color: 'text-red-400' },
   yieldClaimed: { label: 'Yield claimed', color: 'text-purple-400' },
   yieldCompounded: { label: 'Compounded', color: 'text-accent' },
@@ -65,12 +65,16 @@ export default async function HistoryPage() {
     if (bh && bh.status === 'fulfilled') burnHistory = bh.value as BurnEvent[]
   } catch {}
 
-  const genesisEvent = history.find(e => e.type === 'genesis')
-  const seedBean = parseFloat(genesisEvent?.amountFormatted ?? '0')
-  // Total held = staked only (pending is not held until claimed + restaked)
-  const totalBeanEarned = stakedBean > 0 ? stakedBean : seedBean
-  // earnedBean = yield already compounded into staked balance (excludes pending)
-  const earnedBean = Math.max(0, stakedBean - seedBean)
+  // Capital = all BEAN purchased with ETH (genesis + subsequent purchases)
+  const totalCapital = history
+    .filter(e => e.type === 'genesis' || e.type === 'stakeDeposited')
+    .reduce((sum, e) => sum + parseFloat(e.amountFormatted ?? '0'), 0)
+  // Yield = BEAN earned via compounding
+  const totalYield = history
+    .filter(e => e.type === 'yieldCompounded' || e.type === 'yieldClaimed')
+    .reduce((sum, e) => sum + parseFloat(e.amountFormatted ?? e.beanRewardFormatted ?? '0'), 0)
+  const totalBeanEarned = stakedBean > 0 ? stakedBean : totalCapital
+  const earnedBean = Math.max(0, totalYield)
 
   return (
     <>
@@ -96,12 +100,12 @@ export default async function HistoryPage() {
             </div>
             <div className="text-right flex flex-col gap-1 shrink-0">
               <p className="text-xs text-muted">
-                <span className="text-white/60">Seeded</span>{' '}
-                <span className="font-mono">{formatBEAN(seedBean)}</span>
+                <span className="text-white/60">Capital</span>{' '}
+                <span className="font-mono">{formatBEAN(totalCapital)}</span>
               </p>
               {earnedBean > 0 && (
                 <p className="text-xs text-muted">
-                  <span className="text-accent">+ Earned</span>{' '}
+                  <span className="text-accent">+ Yield</span>{' '}
                   <span className="font-mono">{formatBEAN(earnedBean)}</span>
                 </p>
               )}

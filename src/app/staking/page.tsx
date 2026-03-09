@@ -24,7 +24,7 @@ const FILTERS: Record<string, string[]> = {
 
 const EVENT_META: Record<string, { label: string; color: string }> = {
   genesis: { label: 'Seed purchase', color: 'text-[#0052ff]' },
-  stakeDeposited: { label: 'Staked', color: 'text-accent' },
+  stakeDeposited: { label: 'BEAN Purchased', color: 'text-[#0052ff]' },
   yieldCompounded: { label: 'Compounded', color: 'text-purple-400' },
   yieldClaimed: { label: 'Yield Claimed', color: 'text-green-400' },
   stakeWithdrawn: { label: 'Unstaked', color: 'text-red-400' },
