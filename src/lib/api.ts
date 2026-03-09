@@ -5,6 +5,7 @@ import type {
   UserRewards,
   CurrentRound,
   HistoryItem,
+  BurnEvent,
 } from '@/types'
 import {
   mockBeanStats,
@@ -21,6 +22,8 @@ import {
 const MOCK = process.env.MOCK_DATA === 'true'
 
 const API = 'https://api.minebean.com/api'
+// Self-hosted history ledger on the agent VPS — source of truth for all agent events.
+const VPS_API = process.env.BSTR_VPS_API_URL ?? 'http://188.166.74.182:3001'
 
 // All fetches use no-store so page-level ISR (export const revalidate) controls caching.
 // User-Agent is required — Vercel's fetch sends none by default and some APIs block it.
@@ -86,10 +89,19 @@ export async function fetchCurrentRound(): Promise<CurrentRound> {
   return res.json()
 }
 
-export async function fetchUserHistory(address: string, limit = 50): Promise<HistoryItem[]> {
+export async function fetchUserHistory(_address: string, _limit = 50): Promise<HistoryItem[]> {
   if (MOCK) return mockHistory
-  const res = await fetch(`${API}/user/${address}/history?limit=${limit}`, FETCH_OPTS)
+  const res = await fetch(`${VPS_API}/history`, FETCH_OPTS)
   if (!res.ok) throw new Error(`fetchUserHistory: ${res.status}`)
   const data = await res.json()
-  return Array.isArray(data) ? data : data.history ?? data.items ?? []
+  const items: HistoryItem[] = Array.isArray(data) ? data : data.history ?? data.items ?? []
+  return items.slice().sort((a, b) => b.timestamp - a.timestamp)
+}
+
+export async function fetchBurnHistory(): Promise<BurnEvent[]> {
+  if (MOCK) return mockBurnHistory
+  const res = await fetch(`${VPS_API}/burns`, FETCH_OPTS)
+  if (!res.ok) throw new Error(`fetchBurnHistory: ${res.status}`)
+  const data = await res.json()
+  return Array.isArray(data) ? data : []
 }
