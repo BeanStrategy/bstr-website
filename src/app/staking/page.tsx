@@ -12,13 +12,6 @@ export const revalidate = 60
 const AGENT_ADDRESS = process.env.NEXT_PUBLIC_AGENT_ADDRESS ?? ''
 const PAGE_SIZE = 25
 
-const GENESIS_TX = '0x22cc7ac8e092bc9ae6b85efa897b9775dfd994e22264cc8e611dc8ac6bf6d435'
-const GENESIS_EVENT: HistoryItem = {
-  type: 'genesis',
-  amountFormatted: '4.728176',
-  timestamp: 1772928960,
-  txHash: GENESIS_TX,
-}
 
 const STAKING_TYPES = ['genesis', 'stakeDeposited', 'yieldCompounded', 'yieldClaimed', 'stakeWithdrawn']
 
@@ -54,9 +47,7 @@ async function getStakingData() {
   return {
     userStaking: userStaking.status === 'fulfilled' ? userStaking.value : null,
     stakingGlobal: stakingGlobal.status === 'fulfilled' ? stakingGlobal.value : null,
-    history: history.status === 'fulfilled'
-      ? [GENESIS_EVENT, ...(history.value as HistoryItem[]).filter(e => e.txHash !== GENESIS_TX)]
-      : [GENESIS_EVENT],
+    history: history.status === 'fulfilled' ? history.value as HistoryItem[] : [],
     stats: stats.status === 'fulfilled' ? stats.value : null,
   }
 }
@@ -86,7 +77,9 @@ export default async function StakingPage({
 
   // Staking event history
   const allStakingEvents = history.filter((h) => STAKING_TYPES.includes(h.type))
-  const filteredEvents = allStakingEvents.filter((h) => FILTERS[filter].includes(h.type))
+  const filteredEvents = allStakingEvents
+    .filter((h) => FILTERS[filter].includes(h.type))
+    .sort((a, b) => b.timestamp - a.timestamp)
   const totalPages = Math.max(1, Math.ceil(filteredEvents.length / PAGE_SIZE))
   const currentPage = Math.min(page, totalPages)
   const pageEvents = filteredEvents.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE)
@@ -202,7 +195,7 @@ export default async function StakingPage({
           <div className="card p-5">
             <p className="text-muted text-sm mb-1">Total BEAN Staked Events</p>
             <p className="stat-number text-2xl font-bold">
-              {allStakingEvents.filter((e) => e.type === 'stakeDeposited').length}
+              {allStakingEvents.filter((e) => e.type === 'stakeDeposited' || e.type === 'genesis').length}
             </p>
             <p className="text-muted text-sm">deposit transactions</p>
           </div>
