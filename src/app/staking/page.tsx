@@ -13,18 +13,19 @@ const AGENT_ADDRESS = process.env.NEXT_PUBLIC_AGENT_ADDRESS ?? ''
 const PAGE_SIZE = 25
 
 
-const STAKING_TYPES = ['genesis', 'stakeDeposited', 'yieldCompounded', 'yieldClaimed', 'stakeWithdrawn']
+const STAKING_TYPES = ['genesis', 'stakeDeposited', 'feeReinvested', 'yieldCompounded', 'yieldClaimed', 'stakeWithdrawn']
 
 const FILTERS: Record<string, string[]> = {
   all: STAKING_TYPES,
-  deposits: ['genesis', 'stakeDeposited'],
-  compounds: ['yieldCompounded'],
-  claims: ['yieldClaimed'],
+  capital: ['genesis', 'stakeDeposited'],
+  fees: ['feeReinvested'],
+  compounds: ['yieldCompounded', 'yieldClaimed'],
 }
 
 const EVENT_META: Record<string, { label: string; color: string }> = {
-  genesis: { label: 'Seed purchase', color: 'text-[#0052ff]' },
-  stakeDeposited: { label: 'BEAN Purchased', color: 'text-[#0052ff]' },
+  genesis: { label: 'Capital Injected', color: 'text-[#0052ff]' },
+  stakeDeposited: { label: 'Capital Injected', color: 'text-[#0052ff]' },
+  feeReinvested: { label: 'Fees Reinvested', color: 'text-accent' },
   yieldCompounded: { label: 'Compounded', color: 'text-purple-400' },
   yieldClaimed: { label: 'Yield Claimed', color: 'text-green-400' },
   stakeWithdrawn: { label: 'Unstaked', color: 'text-red-400' },
@@ -32,9 +33,9 @@ const EVENT_META: Record<string, { label: string; color: string }> = {
 
 const FILTER_LABELS: Record<string, string> = {
   all: 'All',
-  deposits: 'Deposits',
+  capital: 'Capital',
+  fees: 'Fees',
   compounds: 'Compounds',
-  claims: 'Claims',
 }
 
 async function getStakingData() {
@@ -193,11 +194,11 @@ export default async function StakingPage({
             <p className="text-muted text-sm">{compoundCount} yield events</p>
           </div>
           <div className="card p-5">
-            <p className="text-muted text-sm mb-1">Total BEAN Staked Events</p>
+            <p className="text-muted text-sm mb-1">Capital Injections</p>
             <p className="stat-number text-2xl font-bold">
               {allStakingEvents.filter((e) => e.type === 'stakeDeposited' || e.type === 'genesis').length}
             </p>
-            <p className="text-muted text-sm">deposit transactions</p>
+            <p className="text-muted text-sm">ETH → BEAN transactions</p>
           </div>
         </div>
 

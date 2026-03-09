@@ -44,6 +44,8 @@ export interface HistoryItem {
   beanRewardFormatted?: string
   amount?: string
   amountFormatted?: string
+  sourceCurrency?: 'ETH' | 'WETH'
+  sourceAmount?: string
   timestamp: number
   txHash?: string
 }
