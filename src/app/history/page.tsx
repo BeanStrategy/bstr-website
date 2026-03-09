@@ -1,7 +1,6 @@
 import { fetchUserHistory, fetchBeanStats, fetchUserStaking } from '@/lib/api'
 import { fetchBstrBurned, fetchBurnHistory } from '@/lib/onchain'
 import { timeAgo, formatBEAN, formatUSD } from '@/lib/utils'
-import { mockBurnHistory } from '@/lib/mock-data'
 import ChartWrapper from '@/components/ChartWrapper'
 import AutoRefresh from '@/components/AutoRefresh'
 import BeanIcon from '@/components/BeanIcon'
@@ -11,17 +10,8 @@ import type { HistoryItem, BurnEvent } from '@/types'
 
 const AGENT_ADDRESS = process.env.NEXT_PUBLIC_AGENT_ADDRESS ?? ''
 const BSTR_ADDRESS = process.env.NEXT_PUBLIC_BSTR_ADDRESS ?? ''
-const MOCK = process.env.MOCK_DATA === 'true'
 
 export const revalidate = 60
-
-const GENESIS_TX = '0x22cc7ac8e092bc9ae6b85efa897b9775dfd994e22264cc8e611dc8ac6bf6d435'
-const GENESIS_EVENT: HistoryItem = {
-  type: 'genesis',
-  amountFormatted: '4.728176',
-  timestamp: 1772928960,
-  txHash: GENESIS_TX,
-}
 
 const EVENT_LABELS: Record<string, { label: string; color: string }> = {
   genesis: { label: 'Seed purchase', color: 'text-[#0052ff]' },
@@ -58,7 +48,7 @@ export default async function HistoryPage() {
     }
 
     const [h, s, st, b, bh] = await Promise.allSettled(fetches)
-    if (h.status === 'fulfilled') history = [GENESIS_EVENT, ...(h.value as HistoryItem[]).filter(e => e.txHash !== GENESIS_TX)]
+    if (h.status === 'fulfilled') history = h.value as HistoryItem[]
     if (s.status === 'fulfilled') {
       const stats = s.value as { beanPriceUsd: number; priceChange24h: number; volume24h: number; liquidity: number }
       beanPriceUsd = stats.beanPriceUsd
@@ -75,12 +65,8 @@ export default async function HistoryPage() {
     if (bh && bh.status === 'fulfilled') burnHistory = bh.value as BurnEvent[]
   } catch {}
 
-  if (MOCK) {
-    burnHistory = mockBurnHistory
-    bstrBurned = mockBurnHistory.reduce((sum, e) => sum + e.bstrBurned, 0)
-  }
-
-  const seedBean = parseFloat(GENESIS_EVENT.amountFormatted ?? '0')
+  const genesisEvent = history.find(e => e.type === 'genesis')
+  const seedBean = parseFloat(genesisEvent?.amountFormatted ?? '0')
   // Total held = staked only (pending is not held until claimed + restaked)
   const totalBeanEarned = stakedBean > 0 ? stakedBean : seedBean
   // earnedBean = yield already compounded into staked balance (excludes pending)
@@ -222,7 +208,7 @@ export default async function HistoryPage() {
             )}
           </div>
 
-          {!BSTR_ADDRESS && !MOCK ? (
+          {!BSTR_ADDRESS ? (
             <div className="p-8">
               <p className="text-muted text-sm mb-4">
                 BSTR buyback and burn activity will appear here after token launch. Every time fees are collected,
