@@ -27,8 +27,8 @@ const DOT_COLORS: Record<string, string> = {
   genesis:        '#0052ff',
   stakeDeposited: '#0052ff',
   feeReinvested:  '#22c55e',
-  yieldCompounded:'#a855f7',
-  yieldClaimed:   '#a855f7',
+  yieldCompounded:'#22c55e',
+  yieldClaimed:   '#c084fc',
   checkpointed:   '#22c55e',
   claimedBEAN:    '#4ade80',
 }
@@ -182,8 +182,8 @@ export default function AccumulationChart({ history, height = 220 }: Accumulatio
       <div className="flex flex-wrap gap-4 mt-3 justify-end">
         {([
           ['Capital Injected', '#0052ff'],
-          ['Fees Reinvested', '#22c55e'],
-          ['Compounded',       '#a855f7'],
+          ['Fees / Compounded', '#22c55e'],
+          ['Yield Claimed',    '#c084fc'],
         ] as [string, string][]).map(([label, color]) => (
           <div key={label} className="flex items-center gap-1.5">
             <span className="w-2 h-2 rounded-full inline-block" style={{ backgroundColor: color }} />
