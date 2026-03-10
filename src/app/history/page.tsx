@@ -76,6 +76,12 @@ export default async function HistoryPage() {
     .reduce((sum, e) => sum + parseFloat(e.amountFormatted ?? e.beanRewardFormatted ?? '0'), 0)
   const totalBeanEarned = stakedBean > 0 ? stakedBean : totalCapital
   const earnedBean = Math.max(0, totalYield)
+  // Fee flywheel — BEAN accumulated from BSTR trading fees
+  const feeEvents = history
+    .filter(e => e.type === 'feeReinvested')
+    .sort((a, b) => b.timestamp - a.timestamp)
+  const totalFeeBean = feeEvents.reduce((sum, e) => sum + parseFloat(e.amountFormatted ?? '0'), 0)
+  const totalFeeWeth = feeEvents.reduce((sum, e) => sum + parseFloat(e.sourceAmount ?? '0'), 0)
 
   return (
     <>
@@ -196,19 +202,19 @@ export default async function HistoryPage() {
             </div>
           )}
         </div>
-        {/* Buyback & Burn History */}
+        {/* Trading Fee Flywheel */}
         <div className="card mt-8">
           <div className="p-6 border-b border-border flex items-center justify-between">
             <div>
-              <h3 className="font-semibold">BSTR Buyback &amp; Burn</h3>
+              <h3 className="font-semibold">Trading Fee Flywheel</h3>
               <p className="text-muted text-sm mt-0.5">
-                20% of BSTR trading fees used to buy and permanently burn BSTR
+                BSTR trading fees collected as WETH — 80% buys and stakes BEAN, 20% buys and burns BSTR
               </p>
             </div>
-            {bstrBurned > 0 && (
+            {totalFeeBean > 0 && (
               <div className="text-right">
-                <p className="text-xs text-muted mb-0.5">Total burned</p>
-                <p className="font-mono font-bold text-orange-400">{formatBEAN(bstrBurned)} BSTR</p>
+                <p className="text-xs text-muted mb-0.5">BEAN from fees</p>
+                <p className="font-mono font-bold text-accent">{formatBEAN(totalFeeBean)} BEAN</p>
               </div>
             )}
           </div>
@@ -216,83 +222,108 @@ export default async function HistoryPage() {
           {!BSTR_ADDRESS ? (
             <div className="p-8">
               <p className="text-muted text-sm mb-4">
-                BSTR buyback and burn activity will appear here after token launch. Every time fees are collected,
-                20% of the WETH is used to buy BSTR at market price and send it to the burn address permanently.
+                Fee collection activates after BSTR token launch. Every time BSTR trades, fees accumulate
+                as WETH — the agent collects and splits them automatically every 6 hours.
               </p>
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
                 <div className="bg-card/50 rounded-lg p-4 border border-border">
                   <p className="text-muted mb-1">Frequency</p>
-                  <p className="font-medium">Every 12 hours</p>
+                  <p className="font-medium">Every 6 hours</p>
                 </div>
                 <div className="bg-card/50 rounded-lg p-4 border border-border">
-                  <p className="text-muted mb-1">Source</p>
-                  <p className="font-medium">20% of WETH trading fees</p>
+                  <p className="text-muted mb-1">80% — BEAN</p>
+                  <p className="font-medium">WETH → BEAN → staked</p>
                 </div>
                 <div className="bg-card/50 rounded-lg p-4 border border-border">
-                  <p className="text-muted mb-1">Destination</p>
-                  <p className="font-mono text-xs text-muted">0x000000000000000000000000000000000000dead</p>
+                  <p className="text-muted mb-1">20% — BSTR burn</p>
+                  <p className="font-medium">WETH → buy BSTR → burn</p>
                 </div>
               </div>
             </div>
-          ) : burnHistory.length === 0 ? (
-            <div className="p-8 text-center text-muted text-sm">No burn events yet.</div>
+          ) : feeEvents.length === 0 && burnHistory.length === 0 ? (
+            <div className="p-8 text-center text-muted text-sm">No fee-collect events yet.</div>
           ) : (
             <>
-              <div className="divide-y divide-border">
-                {burnHistory.map((event, i) => (
-                  <div
-                    key={i}
-                    className="px-6 py-4 flex items-center justify-between hover:bg-card/50 transition-colors"
-                  >
-                    <div className="flex items-center gap-4">
-                      <span className="text-sm font-medium text-orange-400 w-24 sm:w-32">Burned</span>
-                      <span className="text-sm font-mono text-white">
-                        {event.bstrBurned.toLocaleString()} BSTR
-                      </span>
-                      {event.ethSpent > 0 && (
-                        <span className="hidden sm:block text-xs text-muted">
-                          {event.ethSpent.toFixed(4)} ETH
-                        </span>
-                      )}
+              {feeEvents.length > 0 && (
+                <div className="divide-y divide-border">
+                  {feeEvents.map((item, i) => (
+                    <div key={i} className="px-6 py-4 flex items-center justify-between hover:bg-card/50 transition-colors">
+                      <div className="flex items-center gap-4">
+                        <span className="text-sm font-medium text-accent w-28">Fees → BEAN</span>
+                        <span className="text-sm font-mono text-white">+{item.amountFormatted} BEAN</span>
+                        {item.sourceAmount && (
+                          <span className="hidden sm:block text-xs text-muted">
+                            {parseFloat(item.sourceAmount).toFixed(4)} WETH
+                          </span>
+                        )}
+                      </div>
+                      <div className="flex items-center gap-3">
+                        <span className="text-xs text-muted">{timeAgo(item.timestamp)}</span>
+                        {item.txHash && (
+                          <a href={`https://basescan.org/tx/${item.txHash}`} target="_blank" rel="noopener noreferrer"
+                            className="hidden sm:block text-xs text-muted hover:text-white font-mono">
+                            {item.txHash.slice(0, 8)}…
+                          </a>
+                        )}
+                      </div>
                     </div>
-                    <div className="flex items-center gap-4">
-                      <span className="text-xs text-muted">{timeAgo(event.timestamp)}</span>
-                      <a
-                        href={`https://basescan.org/tx/${event.txHash}`}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="hidden sm:block text-xs text-muted hover:text-white transition-colors font-mono"
-                      >
-                        {event.txHash.slice(0, 8)}…
-                      </a>
-                    </div>
+                  ))}
+                </div>
+              )}
+
+              {burnHistory.length > 0 && (
+                <>
+                  <div className="px-6 py-3 border-t border-border">
+                    <p className="text-xs text-muted uppercase tracking-wide">BSTR Burns (20% of fees)</p>
                   </div>
-                ))}
-              </div>
+                  <div className="divide-y divide-border">
+                    {burnHistory.map((event, i) => (
+                      <div key={i} className="px-6 py-4 flex items-center justify-between hover:bg-card/50 transition-colors">
+                        <div className="flex items-center gap-4">
+                          <span className="text-sm font-medium text-orange-400 w-28">BSTR Burned</span>
+                          <span className="text-sm font-mono text-white">{event.bstrBurned.toLocaleString()} BSTR</span>
+                          {event.ethSpent > 0 && (
+                            <span className="hidden sm:block text-xs text-muted">{event.ethSpent.toFixed(4)} WETH</span>
+                          )}
+                        </div>
+                        <div className="flex items-center gap-4">
+                          <span className="text-xs text-muted">{timeAgo(event.timestamp)}</span>
+                          <a href={`https://basescan.org/tx/${event.txHash}`} target="_blank" rel="noopener noreferrer"
+                            className="hidden sm:block text-xs text-muted hover:text-white font-mono">
+                            {event.txHash.slice(0, 8)}…
+                          </a>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </>
+              )}
+
               <div className="px-6 py-4 border-t border-border flex items-center justify-between">
                 <div className="flex gap-6">
-                  <div>
-                    <p className="text-xs text-muted mb-0.5">Total BSTR burned</p>
-                    <p className="font-mono font-semibold text-orange-400">
-                      {formatBEAN(bstrBurned)} BSTR
-                    </p>
-                  </div>
-                  {burnHistory.some(e => e.ethSpent > 0) && (
+                  {totalFeeBean > 0 && (
                     <div>
-                      <p className="text-xs text-muted mb-0.5">Total ETH spent</p>
-                      <p className="font-mono font-semibold text-white">
-                        {burnHistory.reduce((sum, e) => sum + e.ethSpent, 0).toFixed(4)} ETH
-                      </p>
+                      <p className="text-xs text-muted mb-0.5">Total BEAN from fees</p>
+                      <p className="font-mono font-semibold text-accent">{formatBEAN(totalFeeBean)} BEAN</p>
+                    </div>
+                  )}
+                  {totalFeeWeth > 0 && (
+                    <div>
+                      <p className="text-xs text-muted mb-0.5">Total WETH processed</p>
+                      <p className="font-mono font-semibold text-white">{totalFeeWeth.toFixed(4)} WETH</p>
+                    </div>
+                  )}
+                  {bstrBurned > 0 && (
+                    <div>
+                      <p className="text-xs text-muted mb-0.5">Total BSTR burned</p>
+                      <p className="font-mono font-semibold text-orange-400">{formatBEAN(bstrBurned)} BSTR</p>
                     </div>
                   )}
                 </div>
                 {BSTR_ADDRESS && (
-                  <a
-                    href={`https://basescan.org/token/${BSTR_ADDRESS}?a=0x000000000000000000000000000000000000dead`}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="text-xs text-muted hover:text-white transition-colors"
-                  >
+                  <a href={`https://basescan.org/token/${BSTR_ADDRESS}?a=0x000000000000000000000000000000000000dead`}
+                    target="_blank" rel="noopener noreferrer"
+                    className="text-xs text-muted hover:text-white transition-colors">
                     View burn address →
                   </a>
                 )}
