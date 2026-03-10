@@ -85,3 +85,15 @@ export async function fetchBurnHistory(): Promise<BurnEvent[]> {
   const data = await res.json()
   return Array.isArray(data) ? data : []
 }
+
+export async function fetchEthBalance(address: string): Promise<number> {
+  const res = await fetch('https://mainnet.base.org', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ jsonrpc: '2.0', method: 'eth_getBalance', params: [address, 'latest'], id: 1 }),
+    cache: 'no-store',
+  })
+  if (!res.ok) throw new Error(`fetchEthBalance: ${res.status}`)
+  const data = await res.json()
+  return parseInt(data.result, 16) / 1e18
+}

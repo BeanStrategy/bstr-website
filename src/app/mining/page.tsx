@@ -1,4 +1,4 @@
-import { fetchCurrentRound, fetchBeanStats } from '@/lib/api'
+import { fetchCurrentRound, fetchBeanStats, fetchUserStaking, fetchEthBalance } from '@/lib/api'
 import { formatBEAN, formatUSD } from '@/lib/utils'
 import BeanIcon from '@/components/BeanIcon'
 import AutoRefresh from '@/components/AutoRefresh'
@@ -7,40 +7,70 @@ import Footer from '@/components/Footer'
 
 export const revalidate = 60
 
-const AGENT_DEPLOY_ETH = 0.02
-const JACKPOT_TRIGGER_ODDS = 777
-const MINING_ACTIVE = false // flip to true when mining is enabled
+const MINING_ACTIVE = false
+const AGENT_ADDRESS = process.env.NEXT_PUBLIC_AGENT_ADDRESS ?? ''
 
-// Minimum treasury BEAN staked before mining is reconsidered
-const ACTIVATION_TREASURY_BEAN = 50
-// Minimum beanpot pool size to justify any mining activity
-const ACTIVATION_BEANPOT_BEAN = 150
+// Mining parameters
+const AGENT_DEPLOY_ETH = 0.01
+const JACKPOT_ODDS = 777
+const HOUSE_EDGE_PCT = 0.105  // ~10.5% net (1% admin + 10% vault on losers)
+
+// Activation thresholds
+const MIN_BEAN_STAKED = 15
+const MIN_ETH_RESERVE = 0.08
+const MIN_BEANPOT = 75
+const MIN_EV_MARGIN = 0.05     // 5% above breakeven
+const MAX_24H_DROP = -30       // volatility guard: stop if BEAN drops >30% in 24h
 
 async function getMiningData() {
-  try {
-    const [round, stats] = await Promise.allSettled([fetchCurrentRound(), fetchBeanStats()])
-    return {
-      round: round.status === 'fulfilled' ? round.value : null,
-      stats: stats.status === 'fulfilled' ? stats.value : null,
-    }
-  } catch {
-    return { round: null, stats: null }
+  const [round, stats, staking, ethBalance] = await Promise.allSettled([
+    fetchCurrentRound(),
+    fetchBeanStats(),
+    fetchUserStaking(AGENT_ADDRESS),
+    fetchEthBalance(AGENT_ADDRESS),
+  ])
+  return {
+    round: round.status === 'fulfilled' ? round.value : null,
+    stats: stats.status === 'fulfilled' ? stats.value : null,
+    stakedBean: staking.status === 'fulfilled' ? parseFloat(staking.value.balance ?? '0') : 0,
+    ethBalance: ethBalance.status === 'fulfilled' ? ethBalance.value : 0,
   }
 }
 
 export default async function MiningPage() {
-  const { round, stats } = await getMiningData()
+  const { round, stats, stakedBean, ethBalance } = await getMiningData()
 
   const beanpotPool = parseFloat(round?.beanpotPoolFormatted ?? '0')
   const totalDeployedEth = parseFloat(round?.totalDeployedFormatted ?? '0')
   const beanPriceUsd = stats?.beanPriceUsd ?? 0
-  const beanPriceNative = stats?.beanPriceNative ?? 0 // ETH per BEAN
+  const beanPriceNative = stats?.beanPriceNative ?? 0
+  const priceChange24h = stats?.priceChange24h ?? 0
   const beanpotUsd = beanpotPool * beanPriceUsd
+  const ethPriceUsd = beanPriceNative > 0 ? beanPriceUsd / beanPriceNative : 0
 
-  // Lottery snapshot calculations
-  const agentShare = totalDeployedEth > 0 ? AGENT_DEPLOY_ETH / totalDeployedEth : 0
-  const winProbabilityPct = (agentShare / JACKPOT_TRIGGER_ODDS) * 100
-  const costPerRoundBean = beanPriceNative > 0 ? AGENT_DEPLOY_ETH / beanPriceNative : 0
+  // EV calculation
+  const ourShare = totalDeployedEth > 0 ? AGENT_DEPLOY_ETH / totalDeployedEth : 0
+  const houseEdgeCostUsd = AGENT_DEPLOY_ETH * HOUSE_EDGE_PCT * ethPriceUsd
+  const beanPerRound = ourShare * 1.0
+  const jackpotBeanEv = (1 / JACKPOT_ODDS) * ourShare * beanpotPool
+  const totalBeanEv = beanPerRound + jackpotBeanEv
+  const revenueUsd = totalBeanEv * beanPriceUsd
+  const evPerRoundUsd = revenueUsd - houseEdgeCostUsd
+  const evMargin = houseEdgeCostUsd > 0 ? evPerRoundUsd / houseEdgeCostUsd : 0
+  const breakevenBeanUsd = totalBeanEv > 0 && ethPriceUsd > 0
+    ? (AGENT_DEPLOY_ETH * HOUSE_EDGE_PCT * ethPriceUsd) / totalBeanEv
+    : 0
+
+  // Activation condition checks
+  const conditions = {
+    beanStaked: { met: stakedBean >= MIN_BEAN_STAKED, label: 'Treasury stake', detail: `${stakedBean.toFixed(2)} / ${MIN_BEAN_STAKED} BEAN`, value: stakedBean, required: MIN_BEAN_STAKED },
+    ethReserve: { met: ethBalance >= MIN_ETH_RESERVE, label: 'ETH reserve', detail: `${ethBalance.toFixed(3)} / ${MIN_ETH_RESERVE} ETH`, value: ethBalance, required: MIN_ETH_RESERVE },
+    beanpot: { met: beanpotPool >= MIN_BEANPOT, label: 'Beanpot pool', detail: `${beanpotPool.toFixed(0)} / ${MIN_BEANPOT} BEAN`, value: beanpotPool, required: MIN_BEANPOT },
+    evPositive: { met: evMargin >= MIN_EV_MARGIN, label: 'EV margin', detail: evMargin !== 0 ? `${(evMargin * 100).toFixed(1)}% (min ${MIN_EV_MARGIN * 100}%)` : 'Insufficient data', value: evMargin, required: MIN_EV_MARGIN },
+    volatility: { met: priceChange24h >= MAX_24H_DROP, label: 'Volatility guard', detail: `${priceChange24h >= 0 ? '+' : ''}${priceChange24h.toFixed(1)}% 24h (stop if < ${MAX_24H_DROP}%)`, value: priceChange24h, required: MAX_24H_DROP },
+  }
+  const allMet = Object.values(conditions).every(c => c.met)
+  const evPositive = evMargin > 0
 
   return (
     <>
@@ -50,125 +80,167 @@ export default async function MiningPage() {
         <div className="mb-10">
           <div className="flex items-center gap-3 mb-2">
             <h1 className="text-3xl font-bold">Mining Strategy</h1>
-            <span className={`text-xs px-3 py-1 rounded-full border ${MINING_ACTIVE ? 'bg-accent/10 text-accent border-accent/20' : 'bg-yellow-500/10 text-yellow-400 border-yellow-500/20'}`}>
+            <span className={`text-xs px-3 py-1 rounded-full border ${
+              MINING_ACTIVE
+                ? 'bg-accent/10 text-accent border-accent/20'
+                : 'bg-yellow-500/10 text-yellow-400 border-yellow-500/20'
+            }`}>
               {MINING_ACTIVE ? 'Active' : 'Paused'}
             </span>
             <AutoRefresh />
           </div>
           <p className="text-muted">
-            Beanpot mining is deferred while the treasury builds. Strategy and cadence will be
-            reviewed once the minimum stake threshold is reached.
+            Beanpot mining generates BEAN rewards every round and carries jackpot upside.
+            Active when all conditions are met — paused while the treasury builds.
           </p>
         </div>
 
-        {/* Status banner */}
-        <div className="card p-6 mb-8 border-yellow-900/40 bg-yellow-950/10">
-          <div className="flex items-start gap-4">
-            <div className="text-2xl mt-0.5">⏸</div>
-            <div>
-              <h2 className="font-semibold text-yellow-400 mb-1">Mining Deferred</h2>
-              <p className="text-muted text-sm leading-relaxed">
-                BeanStrategy&apos;s primary focus right now is building the treasury through
-                trading fees and staking yield. With rounds running every 60 seconds, mining costs
-                accumulate fast — even a modest bet adds up significantly per day. Mining will be
-                reconsidered once the treasury reaches its initial stake target and we can assess
-                the right cadence and bet size without pressuring the reserve.
-              </p>
+        {/* Paused banner */}
+        {!MINING_ACTIVE && (
+          <div className="card p-6 mb-8 border-yellow-900/40 bg-yellow-950/10">
+            <div className="flex items-start gap-4">
+              <div className="text-xl mt-0.5 text-yellow-400">⏸</div>
+              <div>
+                <h2 className="font-semibold text-yellow-400 mb-1">Mining Paused</h2>
+                <p className="text-muted text-sm leading-relaxed">
+                  Mining is EV-positive when BEAN price is above the breakeven threshold and all
+                  activation conditions are met. Once enabled, the AutoMiner contract handles
+                  per-round deployment automatically — the agent monitors conditions and
+                  starts or stops accordingly.
+                </p>
+              </div>
             </div>
           </div>
-        </div>
+        )}
 
-        {/* Live jackpot snapshot */}
-        <h2 className="font-semibold text-lg mb-4">Current Jackpot</h2>
-        <div className={`grid gap-4 mb-8 ${MINING_ACTIVE ? 'grid-cols-2 md:grid-cols-4' : 'grid-cols-1 max-w-sm'}`}>
-          <div className="card p-5">
-            <p className="text-muted text-sm mb-1">Beanpot Pool</p>
-            <p className="stat-number text-2xl font-bold text-yellow-400 flex items-center gap-2">
-              {formatBEAN(beanpotPool)} <BeanIcon size={22} />
+        {/* EV Status */}
+        <h2 className="font-semibold text-lg mb-4">Live EV Analysis</h2>
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
+          <div className={`card p-5 ${evPositive ? 'border-accent/20' : 'border-red-900/40'}`}>
+            <p className="text-muted text-sm mb-1">EV Status</p>
+            <p className={`stat-number text-2xl font-bold ${evPositive ? 'text-accent' : 'text-red-400'}`}>
+              {evPerRoundUsd !== 0 ? (evPositive ? 'EV+' : 'EV−') : '—'}
             </p>
-            <p className="text-muted text-sm">{formatUSD(beanpotUsd)}</p>
+            <p className="text-muted text-sm">
+              {evPerRoundUsd !== 0 ? `${evPerRoundUsd >= 0 ? '+' : ''}${formatUSD(evPerRoundUsd)}/round` : 'Insufficient data'}
+            </p>
           </div>
-
-          {MINING_ACTIVE && (
-            <>
-              <div className="card p-5">
-                <p className="text-muted text-sm mb-1">Our Share</p>
-                <p className="stat-number text-2xl font-bold">
-                  {agentShare > 0 ? (agentShare * 100).toFixed(3) : '—'}%
-                </p>
-                <p className="text-muted text-sm">
-                  {AGENT_DEPLOY_ETH} ETH of {totalDeployedEth > 0 ? `${totalDeployedEth.toFixed(3)} ETH` : '—'} deployed
-                </p>
-              </div>
-
-              <div className="card p-5">
-                <p className="text-muted text-sm mb-1">Win Probability</p>
-                <p className="stat-number text-2xl font-bold">
-                  {winProbabilityPct > 0 ? winProbabilityPct.toFixed(4) : '—'}%
-                </p>
-                <p className="text-muted text-sm">per round (1-in-{JACKPOT_TRIGGER_ODDS} trigger × share)</p>
-              </div>
-
-              <div className="card p-5">
-                <p className="text-muted text-sm mb-1">Cost Per Round</p>
-                <p className="stat-number text-2xl font-bold">{AGENT_DEPLOY_ETH} ETH</p>
-                <p className="text-muted text-sm">
-                  {costPerRoundBean > 0 ? `~${costPerRoundBean.toFixed(3)} BEAN equivalent` : '—'}
-                </p>
-              </div>
-            </>
-          )}
+          <div className="card p-5">
+            <p className="text-muted text-sm mb-1">Breakeven Price</p>
+            <p className="stat-number text-2xl font-bold">
+              {breakevenBeanUsd > 0 ? formatUSD(breakevenBeanUsd) : '—'}
+            </p>
+            <p className={`text-sm ${beanPriceUsd > breakevenBeanUsd ? 'text-accent' : 'text-red-400'}`}>
+              {beanPriceUsd > 0 && breakevenBeanUsd > 0
+                ? beanPriceUsd > breakevenBeanUsd
+                  ? `+${formatUSD(beanPriceUsd - breakevenBeanUsd)} above`
+                  : `${formatUSD(beanPriceUsd - breakevenBeanUsd)} below`
+                : 'Current: ' + formatUSD(beanPriceUsd)}
+            </p>
+          </div>
+          <div className="card p-5">
+            <p className="text-muted text-sm mb-1">EV Margin</p>
+            <p className={`stat-number text-2xl font-bold ${evMargin >= MIN_EV_MARGIN ? 'text-accent' : evMargin > 0 ? 'text-yellow-400' : 'text-red-400'}`}>
+              {evMargin !== 0 ? `${evMargin >= 0 ? '+' : ''}${(evMargin * 100).toFixed(1)}%` : '—'}
+            </p>
+            <p className="text-muted text-sm">min {MIN_EV_MARGIN * 100}% to activate</p>
+          </div>
+          <div className="card p-5">
+            <p className="text-muted text-sm mb-1">Volatility Guard</p>
+            <p className={`stat-number text-2xl font-bold ${conditions.volatility.met ? 'text-accent' : 'text-red-400'}`}>
+              {priceChange24h >= 0 ? '+' : ''}{priceChange24h.toFixed(1)}%
+            </p>
+            <p className="text-muted text-sm">
+              {conditions.volatility.met ? 'Clear' : `Active — limit ${MAX_24H_DROP}%`}
+            </p>
+          </div>
         </div>
 
         {/* Activation conditions */}
         <div className="card p-6 mb-8">
-          <h2 className="font-semibold mb-5">Activation Conditions</h2>
-          <div className="space-y-4">
-            <Condition
-              label="Treasury reaches minimum stake"
-              detail={`${ACTIVATION_TREASURY_BEAN} BEAN staked — primary accumulation goal before any ETH is spent on mining`}
-              met={false}
-            />
-            <Condition
-              label="Beanpot pool is meaningful"
-              detail={`Pool must exceed ${ACTIVATION_BEANPOT_BEAN} BEAN (${formatUSD(ACTIVATION_BEANPOT_BEAN * beanPriceUsd)}) — current: ${formatBEAN(beanpotPool)} BEAN`}
-              met={beanpotPool >= ACTIVATION_BEANPOT_BEAN}
-            />
-            <Condition
-              label="Operating reserve sufficient"
-              detail="ETH reserve > 0.3 ETH — rounds run every 60s so mining costs compound quickly"
-              met={false}
-            />
+          <div className="flex items-center justify-between mb-5">
+            <h2 className="font-semibold">Activation Conditions</h2>
+            <span className={`text-xs px-2 py-1 rounded-full ${allMet ? 'bg-accent/10 text-accent' : 'bg-muted/10 text-muted'}`}>
+              {Object.values(conditions).filter(c => c.met).length} / {Object.values(conditions).length} met
+            </span>
+          </div>
+          <div className="space-y-3">
+            {Object.values(conditions).map((c, i) => (
+              <div key={i} className="flex items-center justify-between py-2 border-b border-border last:border-0">
+                <div className="flex items-center gap-3">
+                  <span className={`text-base leading-none ${c.met ? 'text-accent' : 'text-muted'}`}>
+                    {c.met ? '✓' : '○'}
+                  </span>
+                  <p className={`text-sm font-medium ${c.met ? 'text-white' : 'text-muted'}`}>{c.label}</p>
+                </div>
+                <p className={`text-xs font-mono ${c.met ? 'text-accent' : 'text-muted'}`}>{c.detail}</p>
+              </div>
+            ))}
           </div>
         </div>
 
-        {/* How beanpot works */}
+        {/* Jackpot + round snapshot */}
+        <h2 className="font-semibold text-lg mb-4">Current Round</h2>
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
+          <div className="card p-5">
+            <p className="text-muted text-sm mb-1">Beanpot Pool</p>
+            <p className="stat-number text-2xl font-bold text-yellow-400 flex items-center gap-2">
+              {formatBEAN(beanpotPool)} <BeanIcon size={20} />
+            </p>
+            <p className="text-muted text-sm">{formatUSD(beanpotUsd)}</p>
+          </div>
+          <div className="card p-5">
+            <p className="text-muted text-sm mb-1">Total Deployed</p>
+            <p className="stat-number text-2xl font-bold">
+              {totalDeployedEth > 0 ? `${totalDeployedEth.toFixed(3)}` : '—'}
+            </p>
+            <p className="text-muted text-sm">ETH this round</p>
+          </div>
+          <div className="card p-5">
+            <p className="text-muted text-sm mb-1">Our Deploy</p>
+            <p className="stat-number text-2xl font-bold text-[#0052ff]">{AGENT_DEPLOY_ETH} ETH</p>
+            <p className="text-muted text-sm">
+              {ourShare > 0 ? `${(ourShare * 100).toFixed(2)}% pool share` : 'when active'}
+            </p>
+          </div>
+          <div className="card p-5">
+            <p className="text-muted text-sm mb-1">BEAN/Round EV</p>
+            <p className="stat-number text-2xl font-bold flex items-center gap-1">
+              {totalBeanEv > 0 ? `+${totalBeanEv.toFixed(4)}` : '—'} <BeanIcon size={16} />
+            </p>
+            <p className="text-muted text-sm">
+              {totalBeanEv > 0 ? `${beanPerRound.toFixed(4)} base + ${jackpotBeanEv.toFixed(5)} jackpot` : 'rewards + jackpot EV'}
+            </p>
+          </div>
+        </div>
+
+        {/* How it works */}
         <div className="card p-6">
           <h2 className="font-semibold mb-4">How Beanpot Mining Works</h2>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6 text-sm text-muted">
             <div>
-              <p className="text-white font-medium mb-2">The Jackpot</p>
+              <p className="text-white font-medium mb-2">Regular BEAN Rewards</p>
               <p className="leading-relaxed">
-                Each mining round, 0.3 BEAN is added to the beanpot pool. A Chainlink VRF
-                randomly triggers the jackpot with 1-in-{JACKPOT_TRIGGER_ODDS} odds per round. The
-                winner takes the entire pool.
+                Every round, 1 BEAN is minted and distributed proportionally among miners on the
+                winning block. With 60-second rounds, this compounds into meaningful daily
+                accumulation when BEAN price is above the breakeven threshold.
               </p>
             </div>
             <div>
-              <p className="text-white font-medium mb-2">Your Share</p>
+              <p className="text-white font-medium mb-2">The Jackpot</p>
               <p className="leading-relaxed">
-                {MINING_ACTIVE
-                  ? `Deploying ${AGENT_DEPLOY_ETH} ETH gives a proportional claim on the jackpot relative to all ETH deployed that round. With ~${totalDeployedEth.toFixed(2)} ETH total deployed, our bet represents a ${(agentShare * 100).toFixed(3)}% share of the pool.`
-                  : `Deploying ${AGENT_DEPLOY_ETH} ETH gives a proportional claim on the jackpot relative to all ETH deployed that round. Share size and win probability are calculated live once mining is active.`}
+                0.3 BEAN is added to the beanpot each round. Chainlink VRF triggers the jackpot
+                with 1-in-{JACKPOT_ODDS} odds — when hit, the entire pool splits proportionally
+                among that round&apos;s winning-block miners. Currently {formatBEAN(beanpotPool)} BEAN ({formatUSD(beanpotUsd)}).
               </p>
             </div>
             <div>
               <p className="text-white font-medium mb-2">Our Strategy</p>
               <p className="leading-relaxed">
-                Mining is a lottery, not an investment. With 60-second rounds, even a small bet
-                deployed every round costs thousands per day. Once the treasury is established,
-                we&apos;ll set a limited daily cadence — a few rounds per day maximum — treating
-                mining as jackpot exposure, not a primary accumulation strategy.
+                Mining is EV-positive when BEAN price exceeds the breakeven ratio against ETH.
+                The AutoMiner contract handles per-round deployment automatically. The agent
+                monitors conditions every 6 hours and starts or stops based on live EV,
+                reserve health, and price volatility.
               </p>
             </div>
           </div>
@@ -176,19 +248,5 @@ export default async function MiningPage() {
       </main>
       <Footer />
     </>
-  )
-}
-
-function Condition({ label, detail, met }: { label: string; detail: string; met: boolean }) {
-  return (
-    <div className="flex items-start gap-4">
-      <span className={`mt-0.5 text-lg leading-none ${met ? 'text-accent' : 'text-muted'}`}>
-        {met ? '✓' : '○'}
-      </span>
-      <div>
-        <p className={`font-medium text-sm ${met ? 'text-accent' : 'text-white'}`}>{label}</p>
-        <p className="text-muted text-xs mt-0.5">{detail}</p>
-      </div>
-    </div>
   )
 }
