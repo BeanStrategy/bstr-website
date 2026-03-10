@@ -174,27 +174,26 @@ export default async function HomePage() {
         </div>
 
         {/* Treasury asset breakdown */}
-        <div className="card p-5 mb-6">
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
-            <div>
-              <p className="text-xs text-muted mb-1">BEAN</p>
-              <p className="text-base font-semibold text-[#0052ff]">{formatUSD(beanUsd)}</p>
-              <p className="text-xs text-muted font-mono mt-0.5">
-                {formatBEAN(stakedBean)} staked
-                {beanWalletBalance > 0 && ` + ${formatBEAN(beanWalletBalance)} wallet`}
-              </p>
-            </div>
-            <div className="sm:border-l sm:border-border sm:pl-4">
-              <p className="text-xs text-muted mb-1">ETH{wethBalance > 0 ? ' + WETH' : ''} (reserve)</p>
-              <p className="text-base font-semibold">{formatUSD(ethUsd + wethUsd)}</p>
-              <p className="text-xs text-muted font-mono mt-0.5">
-                {ethBalance.toFixed(4)} ETH{wethBalance > 0 ? ` + ${wethBalance.toFixed(4)} WETH` : ''}
-              </p>
-            </div>
+        <div className="card p-5 mb-6 grid grid-cols-1 sm:grid-cols-3 gap-4">
+          <div>
+            <p className="text-xs text-muted mb-1">BEAN</p>
+            <p className="text-base font-semibold text-[#0052ff]">{formatUSD(beanUsd)}</p>
+            <p className="text-xs text-muted font-mono mt-0.5">
+              {formatBEAN(stakedBean)} staked
+              {beanWalletBalance > 0 && ` + ${formatBEAN(beanWalletBalance)} wallet`}
+            </p>
           </div>
-          <div className="border-t border-border pt-3 flex items-center justify-between">
-            <p className="text-xs text-muted uppercase tracking-wide">Total Treasury</p>
-            <p className="text-base font-semibold">{formatUSD(totalTreasuryUsd)}</p>
+          <div className="sm:border-l sm:border-border sm:pl-4">
+            <p className="text-xs text-muted mb-1">ETH{wethBalance > 0 ? ' + WETH' : ''} (reserve)</p>
+            <p className="text-base font-semibold">{formatUSD(ethUsd + wethUsd)}</p>
+            <p className="text-xs text-muted font-mono mt-0.5">
+              {ethBalance.toFixed(4)} ETH{wethBalance > 0 ? ` + ${wethBalance.toFixed(4)} WETH` : ''}
+            </p>
+          </div>
+          <div className="sm:border-l sm:border-border sm:pl-4">
+            <p className="text-xs text-muted mb-1">Total Treasury</p>
+            <p className="text-xl font-bold">{formatUSD(totalTreasuryUsd)}</p>
+            <p className="text-xs text-muted mt-0.5">BEAN + ETH combined</p>
           </div>
         </div>
 
