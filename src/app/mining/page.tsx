@@ -197,19 +197,25 @@ export default async function MiningPage() {
             <p className="text-muted text-sm">ETH this round</p>
           </div>
           <div className="card p-5">
-            <p className="text-muted text-sm mb-1">Our Deploy</p>
+            <p className="text-muted text-sm mb-1">{MINING_ACTIVE ? 'Our Deploy' : 'Projected Deploy'}</p>
             <p className="stat-number text-2xl font-bold text-[#0052ff]">{AGENT_DEPLOY_ETH} ETH</p>
             <p className="text-muted text-sm">
-              {ourShare > 0 ? `${(ourShare * 100).toFixed(2)}% pool share` : 'when active'}
+              {MINING_ACTIVE
+                ? ourShare > 0 ? `${(ourShare * 100).toFixed(2)}% pool share` : 'when active'
+                : ourShare > 0 ? `${(ourShare * 100).toFixed(2)}% if active` : 'if mining active'}
             </p>
           </div>
           <div className="card p-5">
-            <p className="text-muted text-sm mb-1">BEAN/Round EV</p>
+            <p className="text-muted text-sm mb-1">{MINING_ACTIVE ? 'BEAN/Round EV' : 'Projected EV'}</p>
             <p className="stat-number text-2xl font-bold flex items-center gap-1">
               {totalBeanEv > 0 ? `+${totalBeanEv.toFixed(4)}` : '—'} <BeanIcon size={16} />
             </p>
             <p className="text-muted text-sm">
-              {totalBeanEv > 0 ? `${beanPerRound.toFixed(4)} base + ${jackpotBeanEv.toFixed(5)} jackpot` : 'rewards + jackpot EV'}
+              {totalBeanEv > 0
+                ? MINING_ACTIVE
+                  ? `${beanPerRound.toFixed(4)} base + ${jackpotBeanEv.toFixed(5)} jackpot`
+                  : `${beanPerRound.toFixed(4)} base + ${jackpotBeanEv.toFixed(5)} jackpot (projected)`
+                : 'rewards + jackpot EV'}
             </p>
           </div>
         </div>
