@@ -10,6 +10,7 @@ import type { HistoryItem } from '@/types'
 export const revalidate = 60
 
 const AGENT_ADDRESS = process.env.NEXT_PUBLIC_AGENT_ADDRESS ?? ''
+const BSTR_ADDRESS = process.env.NEXT_PUBLIC_BSTR_ADDRESS ?? ''
 const PAGE_SIZE = 25
 
 const STAKING_TYPES = ['genesis', 'stakeDeposited', 'feeReinvested', 'yieldCompounded', 'yieldClaimed', 'stakeWithdrawn']
@@ -68,8 +69,10 @@ export default async function StakingPage({
   const stakedBean = parseFloat(userStaking?.balance ?? '0')
   const pendingRewards = parseFloat(userStaking?.pendingRewards ?? '0')
   const beanPriceUsd = stats?.beanPriceUsd ?? 0
+  const beanPriceNative = stats?.beanPriceNative ?? 0
   const apr = stakingGlobal?.apr ?? 0
   const totalStaked = parseFloat(stakingGlobal?.totalStaked ?? '0')
+  const ethPrice = beanPriceNative > 0 ? beanPriceUsd / beanPriceNative : 0
 
   const treasuryUsd = stakedBean * beanPriceUsd
   const dailyYield = stakedBean * (apr / 100) / 365
@@ -96,6 +99,11 @@ export default async function StakingPage({
   const totalEthInvested = capitalEvents.reduce((sum, e) => sum + parseFloat(e.sourceAmount ?? '0'), 0)
   const totalCapitalBean = capitalEvents.reduce((sum, e) => sum + parseFloat(e.amountFormatted ?? '0'), 0)
   const avgBeanPerEth = totalEthInvested > 0 ? totalCapitalBean / totalEthInvested : 0
+  const totalCostBasisUsd = capitalEvents.reduce((sum, e) => {
+    if (e.sourceAmountUsd != null) return sum + e.sourceAmountUsd
+    return sum + parseFloat(e.sourceAmount ?? '0') * ethPrice
+  }, 0)
+  const unrealizedPnlUsd = totalCostBasisUsd > 0 ? stakedBean * beanPriceUsd - totalCostBasisUsd : 0
 
   return (
     <>
@@ -170,7 +178,7 @@ export default async function StakingPage({
           <div className="card p-5">
             <p className="text-muted text-sm mb-1">Daily Yield</p>
             <p className="stat-number text-2xl font-bold">
-              {stakedBean > 0 ? `+${dailyYield.toFixed(3)}` : '—'}
+              {stakedBean > 0 ? `+${formatBEAN(dailyYield, 3)}` : '—'}
             </p>
             <p className="text-muted text-sm flex items-center gap-1"><BeanIcon size={14} /> / day</p>
           </div>
@@ -180,7 +188,7 @@ export default async function StakingPage({
               {stakedBean > 0 ? `+${formatBEAN(annualYield)}` : '—'}
             </p>
             <p className="text-muted text-sm">
-              {stakedBean > 0 ? formatUSD(annualYield * beanPriceUsd) : 'at current APR'}
+              {stakedBean > 0 ? `${formatUSD(annualYield * beanPriceUsd)} · at current ${apr.toFixed(0)}% APR` : 'at current APR'}
             </p>
           </div>
           <div className="card p-5">
@@ -198,10 +206,16 @@ export default async function StakingPage({
               {totalCapitalBean > 0 ? formatBEAN(totalCapitalBean, 4) : '—'}
             </p>
             {avgBeanPerEth > 0 ? (
-              <p className="text-muted text-sm font-mono">
-                {capitalEvents.length} inj · {totalEthInvested.toFixed(4)} ETH
-                <br />avg {avgBeanPerEth.toFixed(2)} BEAN/ETH
-              </p>
+              <>
+                <p className="text-muted text-sm font-mono">
+                  {capitalEvents.length} injections · {totalEthInvested.toFixed(4)} ETH
+                </p>
+                <p className={`text-sm font-mono mt-0.5 ${unrealizedPnlUsd >= 0 ? 'text-accent' : 'text-red-400'}`}>
+                  {totalCostBasisUsd > 0
+                    ? `${unrealizedPnlUsd >= 0 ? '+' : ''}${formatUSD(unrealizedPnlUsd)} P&L`
+                    : `avg ${avgBeanPerEth.toFixed(2)} BEAN/ETH`}
+                </p>
+              </>
             ) : (
               <p className="text-muted text-sm">ETH → BEAN transactions</p>
             )}
@@ -213,7 +227,7 @@ export default async function StakingPage({
           {/* Filter tabs */}
           <div className="flex items-center justify-between px-6 pt-6 pb-4 border-b border-border">
             <div className="flex flex-wrap gap-1">
-              {Object.keys(FILTERS).map((f) => (
+              {Object.keys(FILTERS).filter(f => f !== 'fees' || BSTR_ADDRESS !== '').map((f) => (
                 <Link
                   key={f}
                   href={`?filter=${f}&page=1`}
