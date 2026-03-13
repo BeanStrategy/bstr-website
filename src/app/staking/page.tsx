@@ -69,10 +69,8 @@ export default async function StakingPage({
   const stakedBean = parseFloat(userStaking?.balance ?? '0')
   const pendingRewards = parseFloat(userStaking?.pendingRewards ?? '0')
   const beanPriceUsd = stats?.beanPriceUsd ?? 0
-  const beanPriceNative = stats?.beanPriceNative ?? 0
   const apr = stakingGlobal?.apr ?? 0
   const totalStaked = parseFloat(stakingGlobal?.totalStaked ?? '0')
-  const ethPrice = beanPriceNative > 0 ? beanPriceUsd / beanPriceNative : 0
 
   const treasuryUsd = stakedBean * beanPriceUsd
   const dailyYield = stakedBean * (apr / 100) / 365
@@ -94,16 +92,6 @@ export default async function StakingPage({
     .reduce((sum, e) => sum + parseFloat(e.amountFormatted ?? e.beanRewardFormatted ?? '0'), 0)
   const compoundCount = allStakingEvents
     .filter((e) => e.type === 'yieldCompounded' || e.type === 'yieldClaimed').length
-
-  const capitalEvents = allStakingEvents.filter((e) => e.type === 'genesis' || e.type === 'stakeDeposited')
-  const totalEthInvested = capitalEvents.reduce((sum, e) => sum + parseFloat(e.sourceAmount ?? '0'), 0)
-  const totalCapitalBean = capitalEvents.reduce((sum, e) => sum + parseFloat(e.amountFormatted ?? '0'), 0)
-  const avgBeanPerEth = totalEthInvested > 0 ? totalCapitalBean / totalEthInvested : 0
-  const totalCostBasisUsd = capitalEvents.reduce((sum, e) => {
-    if (e.sourceAmountUsd != null) return sum + e.sourceAmountUsd
-    return sum + parseFloat(e.sourceAmount ?? '0') * ethPrice
-  }, 0)
-  const unrealizedPnlUsd = totalCostBasisUsd > 0 ? stakedBean * beanPriceUsd - totalCostBasisUsd : 0
 
   return (
     <>
@@ -173,8 +161,8 @@ export default async function StakingPage({
           )}
         </div>
 
-        {/* Stats — 4 cards */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
+        {/* Stats — 3 cards */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
           <div className="card p-5">
             <p className="text-muted text-sm mb-1">Daily Yield</p>
             <p className="stat-number text-2xl font-bold">
@@ -199,24 +187,6 @@ export default async function StakingPage({
             <p className="text-muted text-sm">
               {totalCompounded > 0 ? `${formatUSD(totalCompounded * beanPriceUsd)} · ` : ''}{compoundCount} events
             </p>
-          </div>
-          <div className="card p-5">
-            <p className="text-muted text-sm mb-1">Cost Basis</p>
-            <p className="stat-number text-2xl font-bold">
-              {totalCostBasisUsd > 0 ? formatUSD(totalCostBasisUsd) : '—'}
-            </p>
-            {totalCostBasisUsd > 0 ? (
-              <>
-                <p className="text-muted text-sm">
-                  {formatUSD(stakedBean * beanPriceUsd)} current value
-                </p>
-                <p className={`text-sm font-mono mt-0.5 ${unrealizedPnlUsd >= 0 ? 'text-accent' : 'text-red-400'}`}>
-                  {unrealizedPnlUsd >= 0 ? '+' : ''}{formatUSD(unrealizedPnlUsd)} P&amp;L
-                </p>
-              </>
-            ) : (
-              <p className="text-muted text-sm">ETH → BEAN transactions</p>
-            )}
           </div>
         </div>
 

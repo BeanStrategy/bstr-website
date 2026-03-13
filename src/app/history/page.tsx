@@ -114,69 +114,103 @@ export default async function HistoryPage() {
           <p className="text-muted">Full BEAN acquisition log for the BeanStrategy treasury</p>
         </div>
 
-        {/* Summary */}
+        {/* Summary — 3 sections */}
         <div className="card p-6 mb-8">
-          <div className="flex flex-col md:flex-row gap-6">
-            {/* Left: BEAN position */}
-            <div className="flex-1 min-w-0">
-              <p className="text-muted text-sm mb-1">BEAN Staked</p>
-              <p className="stat-number text-2xl font-bold text-[#0052ff] flex items-center gap-2 mb-1">
-                {formatBEAN(stakedBean)} <BeanIcon size={20} />
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 md:gap-0">
+
+            {/* Section 1: BEAN Position */}
+            <div className="md:pr-6">
+              <p className="text-xs text-muted uppercase tracking-wide mb-3">Position</p>
+              <p className="stat-number text-3xl font-bold text-[#0052ff] flex items-center gap-2 mb-1">
+                {formatBEAN(stakedBean)} <BeanIcon size={24} />
               </p>
-              <p className="text-muted text-sm mb-4">{formatUSD(stakedBean * beanPriceUsd)}</p>
-              <div className="grid grid-cols-3 gap-4 border-t border-border pt-3">
-                <div>
-                  <p className="text-xs text-muted mb-0.5">Capital</p>
-                  <p className="text-sm font-mono">{formatBEAN(totalCapital)}</p>
-                </div>
-                <div>
-                  <p className="text-xs text-muted mb-0.5">Yield</p>
-                  <p className="text-sm font-mono text-accent">
-                    {earnedBean > 0 ? `+${formatBEAN(earnedBean)}` : '—'}
-                  </p>
-                </div>
-                <div>
-                  <p className="text-xs text-muted mb-0.5">P&amp;L</p>
-                  <p className={`text-sm font-mono ${unrealizedPnlUsd >= 0 ? 'text-accent' : 'text-red-400'}`}>
-                    {totalCostBasisUsd > 0
-                      ? `${unrealizedPnlUsd >= 0 ? '+' : ''}${formatUSD(unrealizedPnlUsd)}`
-                      : '—'}
-                  </p>
-                </div>
-              </div>
-              {(avgBeanPerEth > 0 || pendingBean > 0) && (
-                <p className="text-xs text-muted font-mono mt-3">
-                  {avgBeanPerEth > 0 && `avg ${avgBeanPerEth.toFixed(2)} BEAN/ETH · ${totalEthInvested.toFixed(4)} ETH in`}
-                  {pendingBean > 0 && ` · ~${formatBEAN(pendingBean)} pending`}
-                </p>
-              )}
-            </div>
-
-            {/* Divider */}
-            <div className="hidden md:block w-px self-stretch bg-border/50" />
-
-            {/* Right: BEAN price */}
-            <div className="md:min-w-[200px] shrink-0">
-              <p className="text-muted text-sm mb-1">BEAN Price</p>
-              <div className="flex items-baseline gap-2 mb-4">
-                <p className="stat-number text-2xl font-bold">{formatUSD(beanPriceUsd)}</p>
-                {priceChange24h !== 0 && (
-                  <span className={`text-sm font-medium ${priceChange24h >= 0 ? 'text-accent' : 'text-red-400'}`}>
-                    {priceChange24h >= 0 ? '+' : ''}{priceChange24h.toFixed(2)}% 24h
+              <p className="text-muted text-sm mb-4">{formatUSD(stakedBean * beanPriceUsd)} current value</p>
+              <div className="flex flex-col gap-2">
+                <div className="flex items-center justify-between">
+                  <span className="text-xs text-muted">Capital</span>
+                  <span className="text-sm font-mono flex items-center gap-1">
+                    {formatBEAN(totalCapital)} <BeanIcon size={13} />
                   </span>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="text-xs text-muted">Yield earned</span>
+                  <span className="text-sm font-mono text-accent flex items-center gap-1">
+                    {earnedBean > 0 ? `+${formatBEAN(earnedBean)}` : '—'}
+                    {earnedBean > 0 && <BeanIcon size={13} />}
+                  </span>
+                </div>
+                {pendingBean > 0 && (
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs text-muted">Pending</span>
+                    <span className="text-sm font-mono text-muted flex items-center gap-1">
+                      ~{formatBEAN(pendingBean, 4)} <BeanIcon size={13} />
+                    </span>
+                  </div>
                 )}
               </div>
-              <div className="grid grid-cols-2 gap-4 border-t border-border pt-3">
-                <div>
-                  <p className="text-xs text-muted mb-0.5">Vol 24h</p>
-                  <p className="text-sm font-mono font-medium">{formatUSD(volume24h)}</p>
+            </div>
+
+
+            {/* Section 2: Investment */}
+            <div className="md:px-6 border-t border-border md:border-t-0 md:border-l pt-5 md:pt-0">
+              <p className="text-xs text-muted uppercase tracking-wide mb-3">Investment</p>
+              <p className="text-2xl font-bold mb-1">{totalEthInvested.toFixed(4)} ETH</p>
+              <p className="text-muted text-sm mb-4">total invested</p>
+              <div className="flex flex-col gap-2">
+                <div className="flex items-center justify-between">
+                  <span className="text-xs text-muted">Cost basis</span>
+                  <span className="text-sm font-mono">
+                    {totalCostBasisUsd > 0 ? formatUSD(totalCostBasisUsd) : '—'}
+                  </span>
                 </div>
-                <div>
-                  <p className="text-xs text-muted mb-0.5">Liquidity</p>
-                  <p className="text-sm font-mono font-medium">{formatUSD(liquidity)}</p>
+                <div className="flex items-center justify-between">
+                  <span className="text-xs text-muted">Avg price</span>
+                  <span className="text-sm font-mono flex items-center gap-1">
+                    {avgBeanPerEth > 0 ? `${avgBeanPerEth.toFixed(2)}` : '—'}
+                    {avgBeanPerEth > 0 && <><BeanIcon size={13} /><span className="text-muted">/ETH</span></>}
+                  </span>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="text-xs text-muted">Purchases</span>
+                  <span className="text-sm font-mono">{capitalEvents.length}</span>
                 </div>
               </div>
             </div>
+
+            {/* Section 3: Performance */}
+            <div className="md:pl-6 border-t border-border md:border-t-0 md:border-l pt-5 md:pt-0">
+              <p className="text-xs text-muted uppercase tracking-wide mb-3">Performance</p>
+              <p className={`text-2xl font-bold mb-1 ${unrealizedPnlUsd >= 0 ? 'text-accent' : 'text-red-400'}`}>
+                {totalCostBasisUsd > 0
+                  ? `${unrealizedPnlUsd >= 0 ? '+' : ''}${formatUSD(unrealizedPnlUsd)}`
+                  : '—'}
+              </p>
+              <p className="text-muted text-sm mb-4">unrealized P&amp;L</p>
+              <div className="flex flex-col gap-2">
+                <div className="flex items-center justify-between">
+                  <span className="text-xs text-muted">Paid</span>
+                  <span className="text-sm font-mono">
+                    {totalCostBasisUsd > 0 ? formatUSD(totalCostBasisUsd) : '—'}
+                  </span>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="text-xs text-muted">Now worth</span>
+                  <span className="text-sm font-mono">{formatUSD(stakedBean * beanPriceUsd)}</span>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="text-xs text-muted"><BeanIcon size={13} /> price</span>
+                  <span className="text-sm font-mono flex items-center gap-1.5">
+                    {formatUSD(beanPriceUsd)}
+                    {priceChange24h !== 0 && (
+                      <span className={`text-xs ${priceChange24h >= 0 ? 'text-accent' : 'text-red-400'}`}>
+                        {priceChange24h >= 0 ? '+' : ''}{priceChange24h.toFixed(2)}%
+                      </span>
+                    )}
+                  </span>
+                </div>
+              </div>
+            </div>
+
           </div>
         </div>
 
