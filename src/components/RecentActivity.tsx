@@ -65,12 +65,23 @@ export default function RecentActivity({ history, burnHistory = [] }: RecentActi
               item.data.amountFormatted ??
               null
 
+            const isCapital = item.data.type === 'genesis' || item.data.type === 'stakeDeposited'
+            const ethSpent = isCapital && item.data.sourceAmount ? parseFloat(item.data.sourceAmount) : 0
+            const beanAmount = isCapital ? parseFloat(item.data.amountFormatted ?? '0') : 0
+            const beanPerEth = ethSpent > 0 ? beanAmount / ethSpent : 0
+
             return (
               <div key={i} className="flex items-center justify-between py-1.5">
                 <div className="flex items-center gap-2">
                   <span className={`text-xs font-medium ${meta.color}`}>{meta.label}</span>
                   {amount && (
                     <span className="text-xs text-muted font-mono">{amount}</span>
+                  )}
+                  {isCapital && ethSpent > 0 && (
+                    <span className="text-xs text-muted font-mono">{ethSpent.toFixed(4)} ETH</span>
+                  )}
+                  {isCapital && beanPerEth > 0 && (
+                    <span className="text-xs text-muted font-mono">{beanPerEth.toFixed(2)} BEAN/ETH</span>
                   )}
                 </div>
                 <span className="text-xs text-muted">{timeAgo(item.data.timestamp)}</span>
