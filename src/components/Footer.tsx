@@ -33,6 +33,9 @@ export default function Footer() {
           <div>
             <h4 className="text-sm font-semibold mb-3">Links</h4>
             <div className="space-y-2 text-sm text-muted">
+              <a href="/about" className="block hover:text-white transition-colors">
+                About
+              </a>
               <a href="https://x.com/BeanStrategy" target="_blank" rel="noopener noreferrer" className="block hover:text-white transition-colors">
                 Twitter / X
               </a>
