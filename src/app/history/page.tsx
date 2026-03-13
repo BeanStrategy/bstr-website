@@ -194,14 +194,15 @@ export default async function HistoryPage() {
                       <span className={`text-sm font-medium w-24 sm:w-32 ${meta.color}`}>
                         {meta.label}
                       </span>
-                      {amount && (
-                        <span className="text-sm font-mono text-white">{amount}</span>
-                      )}
-                      {isCapital && ethSpent > 0 && (
-                        <span className="text-xs text-muted font-mono">{ethSpent.toFixed(4)} ETH</span>
-                      )}
-                      {isCapital && beanPerEth > 0 && (
-                        <span className="text-xs text-muted font-mono">{beanPerEth.toFixed(2)} BEAN/ETH</span>
+                      {isCapital && ethSpent > 0 ? (
+                        <>
+                          <span className="text-sm font-mono text-white">
+                            {ethSpent.toFixed(4)} ETH → {beanAmount.toFixed(6)} BEAN
+                          </span>
+                          <span className="text-xs text-muted font-mono">{beanPerEth.toFixed(2)} BEAN/ETH</span>
+                        </>
+                      ) : (
+                        amount && <span className="text-sm font-mono text-white">{amount}</span>
                       )}
                       {item.roundId && (
                         <span className="hidden sm:block text-xs text-muted">Round #{item.roundId}</span>

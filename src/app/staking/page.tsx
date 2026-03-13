@@ -257,14 +257,17 @@ export default async function StakingPage({
                   >
                     <div className="flex items-center gap-4">
                       <span className={`text-sm font-medium w-24 sm:w-28 ${meta.color}`}>{meta.label}</span>
-                      {amount && (
-                        <span className="text-sm font-mono text-white inline-flex items-center gap-1">{amount} <BeanIcon size={14} /></span>
-                      )}
-                      {isCapital && ethSpent > 0 && (
-                        <span className="text-xs text-muted font-mono">{ethSpent.toFixed(4)} ETH</span>
-                      )}
-                      {isCapital && beanPerEth > 0 && (
-                        <span className="text-xs text-muted font-mono">{beanPerEth.toFixed(2)} BEAN/ETH</span>
+                      {isCapital && ethSpent > 0 ? (
+                        <>
+                          <span className="text-sm font-mono text-white">
+                            {ethSpent.toFixed(4)} ETH → {beanAmount.toFixed(6)} BEAN
+                          </span>
+                          <span className="text-xs text-muted font-mono">{beanPerEth.toFixed(2)} BEAN/ETH</span>
+                        </>
+                      ) : (
+                        amount && (
+                          <span className="text-sm font-mono text-white inline-flex items-center gap-1">{amount} <BeanIcon size={14} /></span>
+                        )
                       )}
                     </div>
                     <div className="flex items-center gap-3">

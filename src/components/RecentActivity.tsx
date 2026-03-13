@@ -74,14 +74,15 @@ export default function RecentActivity({ history, burnHistory = [] }: RecentActi
               <div key={i} className="flex items-center justify-between py-1.5">
                 <div className="flex items-center gap-2">
                   <span className={`text-xs font-medium ${meta.color}`}>{meta.label}</span>
-                  {amount && (
-                    <span className="text-xs text-muted font-mono">{amount}</span>
-                  )}
-                  {isCapital && ethSpent > 0 && (
-                    <span className="text-xs text-muted font-mono">{ethSpent.toFixed(4)} ETH</span>
-                  )}
-                  {isCapital && beanPerEth > 0 && (
-                    <span className="text-xs text-muted font-mono">{beanPerEth.toFixed(2)} BEAN/ETH</span>
+                  {isCapital && ethSpent > 0 ? (
+                    <>
+                      <span className="text-xs text-muted font-mono">
+                        {ethSpent.toFixed(4)} ETH → {beanAmount.toFixed(4)} BEAN
+                      </span>
+                      <span className="text-xs text-muted font-mono">{beanPerEth.toFixed(2)} BEAN/ETH</span>
+                    </>
+                  ) : (
+                    amount && <span className="text-xs text-muted font-mono">{amount}</span>
                   )}
                 </div>
                 <span className="text-xs text-muted">{timeAgo(item.data.timestamp)}</span>
