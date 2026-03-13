@@ -106,7 +106,11 @@ export default async function HomePage() {
   const genesisTimestamp = genesisEvent?.timestamp ?? 0
   const daysAccumulating = genesisTimestamp > 0 ? (Date.now() / 1000 - genesisTimestamp) / 86400 : 0
   const beanPerDay = daysAccumulating > 0 ? totalBean / daysAccumulating : 0
-  const costBasisUsd = totalEthInvested * ethPrice
+  // Use stored USD cost at time of purchase when available; fall back to current ETH price
+  const costBasisUsd = capitalEvents.reduce((sum: number, e: HistoryItem) => {
+    if (e.sourceAmountUsd != null) return sum + e.sourceAmountUsd
+    return sum + parseFloat(e.sourceAmount ?? '0') * ethPrice
+  }, 0)
   const unrealizedPnlUsd = costBasisUsd > 0 ? beanUsd - costBasisUsd : 0
 
 
@@ -235,7 +239,7 @@ export default async function HomePage() {
                   {costBasisUsd > 0 ? `${unrealizedPnlUsd >= 0 ? '+' : ''}${formatUSD(unrealizedPnlUsd)}` : '—'}
                 </p>
                 <p className="text-xs text-muted font-mono mt-0.5">
-                  {costBasisUsd > 0 ? `vs ${formatUSD(costBasisUsd)} ETH cost at today's price` : 'vs ETH invested'}
+                  {costBasisUsd > 0 ? `vs ${formatUSD(costBasisUsd)} paid` : 'vs ETH invested'}
                 </p>
               </div>
             </div>
