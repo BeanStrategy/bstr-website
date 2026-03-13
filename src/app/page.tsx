@@ -126,8 +126,9 @@ export default async function HomePage() {
             The BEAN Reserve Protocol
           </h1>
           <p className="text-muted text-lg max-w-2xl">
-            BeanStrategy (BSTR) continuously accumulates BEAN through trading fees and staking
-            yield. Modeled after MicroStrategy&apos;s Bitcoin reserve strategy — for BEAN.
+            BeanStrategy (BSTR) continuously accumulates BEAN through staking yield
+            {hasBstr ? ' and trading fees' : ''}.
+            Modeled after MicroStrategy&apos;s Bitcoin reserve strategy — for BEAN.
           </p>
         </div>
 
@@ -137,11 +138,11 @@ export default async function HomePage() {
 
             {/* Left: BEAN treasury number */}
             <div className="flex-1 min-w-0">
-              <p className="text-muted text-sm mb-2">Total BEAN Treasury</p>
+              <p className="text-muted text-sm mb-2">BEAN Reserve</p>
               <p className="stat-number text-4xl md:text-5xl lg:text-6xl font-bold text-[#0052ff] mb-2 flex items-center gap-3">
                 {formatBEAN(totalBean)} <BeanIcon size={40} />
               </p>
-              <p className="text-muted text-xl mb-3">{formatUSD(totalTreasuryUsd)}</p>
+              <p className="text-muted text-xl mb-3">{formatUSD(beanUsd)}</p>
               {stats && (
                 <p className="text-muted text-sm">
                   BEAN price:{' '}
@@ -185,75 +186,77 @@ export default async function HomePage() {
           </div>
         </div>
 
-        {/* Treasury asset breakdown */}
-        <div className="card p-5 mb-6 grid grid-cols-1 sm:grid-cols-3 gap-4">
-          <div>
-            <p className="text-xs text-muted mb-1">BEAN</p>
-            <p className="text-base font-semibold text-[#0052ff]">{formatUSD(beanUsd)}</p>
-            <p className="text-xs text-muted font-mono mt-0.5">
-              {formatBEAN(stakedBean)} staked
-              {beanWalletBalance > 0 && ` + ${formatBEAN(beanWalletBalance)} wallet`}
-            </p>
-            {avgBeanPerEth > 0 && (
-              <p className="text-xs text-muted font-mono mt-1">
-                avg {avgBeanPerEth.toFixed(2)} BEAN/ETH · {totalEthInvested.toFixed(4)} ETH invested
+        {/* Treasury breakdown */}
+        <div className="card p-5 mb-6">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 pb-4 border-b border-border">
+            <div>
+              <p className="text-xs text-muted mb-1">BEAN</p>
+              <p className="text-base font-semibold text-[#0052ff]">{formatUSD(beanUsd)}</p>
+              <p className="text-xs text-muted font-mono mt-0.5">
+                {formatBEAN(stakedBean)} staked
+                {beanWalletBalance > 0 && ` + ${formatBEAN(beanWalletBalance)} wallet`}
               </p>
-            )}
+              {avgBeanPerEth > 0 && (
+                <p className="text-xs text-muted font-mono mt-1">
+                  avg {avgBeanPerEth.toFixed(2)} BEAN/ETH · {totalEthInvested.toFixed(4)} ETH in
+                </p>
+              )}
+            </div>
+            <div className="sm:border-l sm:border-border sm:pl-4">
+              <p className="text-xs text-muted mb-1">ETH{wethBalance > 0 ? ' + WETH' : ''} (reserve)</p>
+              <p className="text-base font-semibold">{formatUSD(ethUsd + wethUsd)}</p>
+              <p className="text-xs text-muted font-mono mt-0.5">
+                {ethBalance.toFixed(4)} ETH{wethBalance > 0 ? ` + ${wethBalance.toFixed(4)} WETH` : ''}
+              </p>
+            </div>
+            <div className="sm:border-l sm:border-border sm:pl-4">
+              <p className="text-xs text-muted mb-1">Total Treasury</p>
+              <p className="text-xl font-bold">{formatUSD(totalTreasuryUsd)}</p>
+              <p className="text-xs text-muted mt-0.5">BEAN + ETH combined</p>
+            </div>
           </div>
-          <div className="sm:border-l sm:border-border sm:pl-4">
-            <p className="text-xs text-muted mb-1">ETH{wethBalance > 0 ? ' + WETH' : ''} (reserve)</p>
-            <p className="text-base font-semibold">{formatUSD(ethUsd + wethUsd)}</p>
-            <p className="text-xs text-muted font-mono mt-0.5">
-              {ethBalance.toFixed(4)} ETH{wethBalance > 0 ? ` + ${wethBalance.toFixed(4)} WETH` : ''}
-            </p>
-          </div>
-          <div className="sm:border-l sm:border-border sm:pl-4">
-            <p className="text-xs text-muted mb-1">Total Treasury</p>
-            <p className="text-xl font-bold">{formatUSD(totalTreasuryUsd)}</p>
-            <p className="text-xs text-muted mt-0.5">BEAN + ETH combined</p>
-          </div>
+          {daysAccumulating > 0 && (
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 pt-4">
+              <div>
+                <p className="text-xs text-muted mb-1">Days Accumulating</p>
+                <p className="text-base font-semibold">{daysAccumulating.toFixed(1)}</p>
+                <p className="text-xs text-muted mt-0.5">since first BEAN purchase</p>
+              </div>
+              <div className="sm:border-l sm:border-border sm:pl-4">
+                <p className="text-xs text-muted mb-1">BEAN / Day</p>
+                <p className="text-base font-semibold text-accent">
+                  {beanPerDay > 0 ? `+${formatBEAN(beanPerDay, 4)}` : '—'}
+                </p>
+                <p className="text-xs text-muted mt-0.5">capital + yield, since genesis</p>
+              </div>
+              <div className="sm:border-l sm:border-border sm:pl-4">
+                <p className="text-xs text-muted mb-1">Unrealized P&amp;L</p>
+                <p className={`text-base font-semibold ${unrealizedPnlUsd >= 0 ? 'text-accent' : 'text-red-400'}`}>
+                  {costBasisUsd > 0 ? `${unrealizedPnlUsd >= 0 ? '+' : ''}${formatUSD(unrealizedPnlUsd)}` : '—'}
+                </p>
+                <p className="text-xs text-muted font-mono mt-0.5">
+                  {costBasisUsd > 0 ? `vs ${formatUSD(costBasisUsd)} ETH cost at today's price` : 'vs ETH invested'}
+                </p>
+              </div>
+            </div>
+          )}
         </div>
 
-        {/* Accumulation metrics */}
-        {daysAccumulating > 0 && (
-          <div className="card p-5 mb-6 grid grid-cols-1 sm:grid-cols-3 gap-4">
-            <div>
-              <p className="text-xs text-muted mb-1">Days Accumulating</p>
-              <p className="text-base font-semibold">{daysAccumulating.toFixed(1)}</p>
-              <p className="text-xs text-muted font-mono mt-0.5">since genesis</p>
-            </div>
-            <div className="sm:border-l sm:border-border sm:pl-4">
-              <p className="text-xs text-muted mb-1">BEAN / Day</p>
-              <p className="text-base font-semibold text-accent">
-                {beanPerDay > 0 ? `+${formatBEAN(beanPerDay, 4)}` : '—'}
-              </p>
-              <p className="text-xs text-muted mt-0.5">avg accumulation rate</p>
-            </div>
-            <div className="sm:border-l sm:border-border sm:pl-4">
-              <p className="text-xs text-muted mb-1">Unrealized P&amp;L</p>
-              <p className={`text-base font-semibold ${unrealizedPnlUsd >= 0 ? 'text-accent' : 'text-red-400'}`}>
-                {costBasisUsd > 0 ? `${unrealizedPnlUsd >= 0 ? '+' : ''}${formatUSD(unrealizedPnlUsd)}` : '—'}
-              </p>
-              <p className="text-xs text-muted font-mono mt-0.5">
-                {costBasisUsd > 0 ? `vs ${formatUSD(costBasisUsd)} cost basis` : 'vs ETH invested'}
-              </p>
-            </div>
+        {/* BSTR metrics — shown after token launch */}
+        {hasBstr && (
+          <div className="grid grid-cols-2 gap-4 mb-4">
+            <StatCard
+              label="NAV per BSTR"
+              value={navPerBstrUsd > 0 ? formatUSD(navPerBstrUsd) : '—'}
+              sub="Treasury USD / circulating supply"
+            />
+            <StatCard
+              label="BSTR Burned"
+              value={bstrBurned > 0 ? formatBEAN(bstrBurned) : '—'}
+              sub="Permanently removed from supply"
+            />
           </div>
         )}
-
-        {/* BSTR metrics */}
-        <div className="grid grid-cols-2 gap-4 mb-4">
-          <StatCard
-            label="NAV per BSTR"
-            value={hasBstr && navPerBstrUsd > 0 ? formatUSD(navPerBstrUsd) : '—'}
-            sub={hasBstr ? 'Treasury USD / circulating supply' : 'After token launch'}
-          />
-          <StatCard
-            label="BSTR Burned"
-            value={hasBstr && bstrBurned > 0 ? formatBEAN(bstrBurned) : '—'}
-            sub={hasBstr ? 'Permanently removed from supply' : 'After token launch'}
-          />
-        </div>
 
         {/* Buyback & Burn explainer — shown after token launch */}
         {hasBstr && <div className="card p-6 mb-6">
