@@ -26,8 +26,8 @@ const EVENT_META: Record<string, { label: string; color: string }> = {
   genesis: { label: 'Capital Injected', color: 'text-[#0052ff]' },
   stakeDeposited: { label: 'Capital Injected', color: 'text-[#0052ff]' },
   feeReinvested: { label: 'Fees Reinvested', color: 'text-accent' },
-  yieldCompounded: { label: 'Compounded', color: 'text-purple-400' },
-  yieldClaimed: { label: 'Yield Claimed', color: 'text-green-400' },
+  yieldCompounded: { label: 'Compounded', color: 'text-accent' },
+  yieldClaimed: { label: 'Yield Claimed', color: 'text-purple-400' },
   stakeWithdrawn: { label: 'Unstaked', color: 'text-red-400' },
 }
 
