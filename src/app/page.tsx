@@ -105,7 +105,7 @@ export default async function HomePage() {
   const genesisEvent = history.find((e: HistoryItem) => e.type === 'genesis')
   const genesisTimestamp = genesisEvent?.timestamp ?? 0
   const daysAccumulating = genesisTimestamp > 0 ? (Date.now() / 1000 - genesisTimestamp) / 86400 : 0
-  const beanPerDay = daysAccumulating > 0 ? totalBean / daysAccumulating : 0
+  const beanPerDay = stakedBean > 0 && apr > 0 ? stakedBean * (apr / 100) / 365 : 0
   // Use stored USD cost at time of purchase when available; fall back to current ETH price
   const costBasisUsd = capitalEvents.reduce((sum: number, e: HistoryItem) => {
     if (e.sourceAmountUsd != null) return sum + e.sourceAmountUsd
@@ -227,11 +227,11 @@ export default async function HomePage() {
                 <p className="text-xs text-muted mt-0.5">since first BEAN purchase</p>
               </div>
               <div className="sm:border-l sm:border-border sm:pl-4">
-                <p className="text-xs text-muted mb-1">BEAN / Day</p>
+                <p className="text-xs text-muted mb-1">Projected Yield / Day</p>
                 <p className="text-base font-semibold text-accent">
                   {beanPerDay > 0 ? `+${formatBEAN(beanPerDay, 4)}` : '—'}
                 </p>
-                <p className="text-xs text-muted mt-0.5">capital + yield, since genesis</p>
+                <p className="text-xs text-muted mt-0.5">at current {apr > 0 ? `${apr.toFixed(0)}% APR` : 'APR'}</p>
               </div>
               <div className="sm:border-l sm:border-border sm:pl-4">
                 <p className="text-xs text-muted mb-1">Unrealized P&amp;L</p>
