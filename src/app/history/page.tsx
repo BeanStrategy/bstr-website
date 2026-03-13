@@ -2,6 +2,7 @@ import { fetchUserHistory, fetchBeanStats, fetchUserStaking } from '@/lib/api'
 import { fetchBstrBurned, fetchBurnHistory } from '@/lib/onchain'
 import { formatDate, formatBEAN, formatUSD } from '@/lib/utils'
 import ChartWrapper from '@/components/ChartWrapper'
+import TreasuryChartWrapper from '@/components/TreasuryChartWrapper'
 import AutoRefresh from '@/components/AutoRefresh'
 import BeanIcon from '@/components/BeanIcon'
 import Header from '@/components/Header'
@@ -214,10 +215,19 @@ export default async function HistoryPage() {
           </div>
         </div>
 
-        {/* Chart */}
-        <div className="card p-6 mb-8">
+        {/* BEAN accumulation chart */}
+        <div className="card p-6 mb-6">
           <h3 className="font-semibold mb-4">Cumulative BEAN</h3>
-          <ChartWrapper history={history} height={280} />
+          <ChartWrapper history={history} height={240} />
+        </div>
+
+        {/* Treasury value chart */}
+        <div className="card p-6 mb-8">
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="font-semibold">Treasury Value</h3>
+            <span className="text-xs text-muted">USD · historical price at each event</span>
+          </div>
+          <TreasuryChartWrapper history={history} height={260} />
         </div>
 
         {/* Event log */}

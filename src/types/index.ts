@@ -47,6 +47,7 @@ export interface HistoryItem {
   sourceCurrency?: 'ETH' | 'WETH'
   sourceAmount?: string
   sourceAmountUsd?: number
+  beanPriceUsd?: number
   timestamp: number
   txHash?: string
 }
