@@ -1,6 +1,6 @@
 import { fetchUserHistory, fetchBeanStats, fetchUserStaking } from '@/lib/api'
 import { fetchBstrBurned, fetchBurnHistory } from '@/lib/onchain'
-import { timeAgo, formatDate, formatBEAN, formatUSD } from '@/lib/utils'
+import { formatDate, formatBEAN, formatUSD } from '@/lib/utils'
 import ChartWrapper from '@/components/ChartWrapper'
 import AutoRefresh from '@/components/AutoRefresh'
 import BeanIcon from '@/components/BeanIcon'
@@ -237,7 +237,6 @@ export default async function HistoryPage() {
                     </div>
                     <div className="flex flex-col items-end gap-0.5">
                       <span className="text-xs text-muted">{formatDate(item.timestamp)}</span>
-                      <span className="text-xs text-muted/50">{timeAgo(item.timestamp)}</span>
                       {item.txHash && isValidTxHash(item.txHash) && (
                         <a
                           href={`https://basescan.org/tx/${item.txHash}`}
@@ -300,8 +299,7 @@ export default async function HistoryPage() {
                       </div>
                       <div className="flex flex-col items-end gap-0.5">
                         <span className="text-xs text-muted">{formatDate(item.timestamp)}</span>
-                        <span className="text-xs text-muted/50">{timeAgo(item.timestamp)}</span>
-                        {item.txHash && isValidTxHash(item.txHash) && (
+                          {item.txHash && isValidTxHash(item.txHash) && (
                           <a href={`https://basescan.org/tx/${item.txHash}`} target="_blank" rel="noopener noreferrer"
                             className="hidden sm:block text-xs text-muted hover:text-white font-mono">
                             {item.txHash.slice(0, 8)}…
@@ -330,7 +328,6 @@ export default async function HistoryPage() {
                         </div>
                         <div className="flex flex-col items-end gap-0.5">
                           <span className="text-xs text-muted">{formatDate(event.timestamp)}</span>
-                          <span className="text-xs text-muted/50">{timeAgo(event.timestamp)}</span>
                           {isValidTxHash(event.txHash) && (
                             <a href={`https://basescan.org/tx/${event.txHash}`} target="_blank" rel="noopener noreferrer"
                               className="hidden sm:block text-xs text-muted hover:text-white font-mono">

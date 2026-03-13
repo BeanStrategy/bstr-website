@@ -1,6 +1,6 @@
 import Link from 'next/link'
 import { fetchUserStaking, fetchStakingGlobalStats, fetchUserHistory, fetchBeanStats } from '@/lib/api'
-import { formatBEAN, formatUSD, formatDate, timeAgo } from '@/lib/utils'
+import { formatBEAN, formatUSD, formatDate } from '@/lib/utils'
 import AutoRefresh from '@/components/AutoRefresh'
 import BeanIcon from '@/components/BeanIcon'
 import Header from '@/components/Header'
@@ -282,7 +282,6 @@ export default async function StakingPage({
                     </div>
                     <div className="flex flex-col items-end gap-0.5">
                       <span className="text-xs text-muted">{formatDate(item.timestamp)}</span>
-                      <span className="text-xs text-muted/50">{timeAgo(item.timestamp)}</span>
                       {item.txHash && isValidTxHash(item.txHash) && (
                         <a
                           href={`https://basescan.org/tx/${item.txHash}`}
