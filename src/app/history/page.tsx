@@ -197,12 +197,19 @@ export default async function HistoryPage() {
                       {isCapital && ethSpent > 0 ? (
                         <>
                           <span className="text-sm font-mono text-white">
-                            {ethSpent.toFixed(4)} ETH → {beanAmount.toFixed(6)} BEAN
+                            {ethSpent.toFixed(4)} ETH → {formatBEAN(beanAmount, 4)} BEAN
                           </span>
                           <span className="text-xs text-muted font-mono">{beanPerEth.toFixed(2)} BEAN/ETH</span>
                         </>
                       ) : (
-                        amount && <span className="text-sm font-mono text-white">{amount}</span>
+                        amount && (
+                          <span className="text-sm font-mono text-white inline-flex items-center gap-1">
+                            {item.type === 'claimedETH' || item.type === 'deployed'
+                              ? amount
+                              : formatBEAN(parseFloat(amount), 4)}
+                            {item.type !== 'claimedETH' && item.type !== 'deployed' && <BeanIcon size={14} />}
+                          </span>
+                        )
                       )}
                       {item.roundId && (
                         <span className="hidden sm:block text-xs text-muted">Round #{item.roundId}</span>
@@ -275,7 +282,7 @@ export default async function HistoryPage() {
                     <div key={i} className="px-6 py-4 flex items-center justify-between hover:bg-card/50 transition-colors">
                       <div className="flex items-center gap-4">
                         <span className="text-sm font-medium text-accent w-28">Fees → BEAN</span>
-                        <span className="text-sm font-mono text-white">+{item.amountFormatted} BEAN</span>
+                        <span className="text-sm font-mono text-white inline-flex items-center gap-1">+{formatBEAN(parseFloat(item.amountFormatted ?? '0'), 4)} <BeanIcon size={14} /></span>
                         {item.sourceAmount && (
                           <span className="hidden sm:block text-xs text-muted">
                             {parseFloat(item.sourceAmount).toFixed(4)} WETH

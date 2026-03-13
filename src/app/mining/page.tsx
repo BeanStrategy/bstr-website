@@ -11,14 +11,14 @@ const MINING_ACTIVE = false
 const AGENT_ADDRESS = process.env.NEXT_PUBLIC_AGENT_ADDRESS ?? ''
 
 // Mining parameters
-const AGENT_DEPLOY_ETH = 0.01
+const AGENT_DEPLOY_ETH = 0.02
 const JACKPOT_ODDS = 777
 const HOUSE_EDGE_PCT = 0.105  // ~10.5% net (1% admin + 10% vault on losers)
 
 // Activation thresholds
-const MIN_BEAN_STAKED = 15
-const MIN_ETH_RESERVE = 0.08
-const MIN_BEANPOT = 75
+const MIN_BEAN_STAKED = 50
+const MIN_ETH_RESERVE = 0.3
+const MIN_BEANPOT = 150
 const MIN_EV_MARGIN = 0.05     // 5% above breakeven
 const MAX_24H_DROP = -30       // volatility guard: stop if BEAN drops >30% in 24h
 
@@ -245,8 +245,7 @@ export default async function MiningPage() {
               <p className="leading-relaxed">
                 Mining is EV-positive when BEAN price exceeds the breakeven ratio against ETH.
                 The AutoMiner contract handles per-round deployment automatically. The agent
-                monitors conditions every 6 hours and starts or stops based on live EV,
-                reserve health, and price volatility.
+                starts or stops based on live EV, reserve health, and price volatility.
               </p>
             </div>
           </div>

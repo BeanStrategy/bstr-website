@@ -102,6 +102,13 @@ export default async function HomePage() {
   const navPerBstrUsd = bstrCirculating > 0 ? treasuryUsd / bstrCirculating : 0
   const hasBstr = BSTR_ADDRESS !== ''
 
+  const genesisEvent = history.find((e: HistoryItem) => e.type === 'genesis')
+  const genesisTimestamp = genesisEvent?.timestamp ?? 0
+  const daysAccumulating = genesisTimestamp > 0 ? (Date.now() / 1000 - genesisTimestamp) / 86400 : 0
+  const beanPerDay = daysAccumulating > 0 ? totalBean / daysAccumulating : 0
+  const costBasisUsd = totalEthInvested * ethPrice
+  const unrealizedPnlUsd = costBasisUsd > 0 ? beanUsd - costBasisUsd : 0
+
 
   return (
     <>
@@ -134,7 +141,7 @@ export default async function HomePage() {
               <p className="stat-number text-4xl md:text-5xl lg:text-6xl font-bold text-[#0052ff] mb-2 flex items-center gap-3">
                 {formatBEAN(totalBean)} <BeanIcon size={40} />
               </p>
-              <p className="text-muted text-xl mb-3">{formatUSD(treasuryUsd)}</p>
+              <p className="text-muted text-xl mb-3">{formatUSD(totalTreasuryUsd)}</p>
               {stats && (
                 <p className="text-muted text-sm">
                   BEAN price:{' '}
@@ -206,6 +213,33 @@ export default async function HomePage() {
             <p className="text-xs text-muted mt-0.5">BEAN + ETH combined</p>
           </div>
         </div>
+
+        {/* Accumulation metrics */}
+        {daysAccumulating > 0 && (
+          <div className="card p-5 mb-6 grid grid-cols-1 sm:grid-cols-3 gap-4">
+            <div>
+              <p className="text-xs text-muted mb-1">Days Accumulating</p>
+              <p className="text-base font-semibold">{daysAccumulating.toFixed(1)}</p>
+              <p className="text-xs text-muted font-mono mt-0.5">since genesis</p>
+            </div>
+            <div className="sm:border-l sm:border-border sm:pl-4">
+              <p className="text-xs text-muted mb-1">BEAN / Day</p>
+              <p className="text-base font-semibold text-accent">
+                {beanPerDay > 0 ? `+${formatBEAN(beanPerDay, 4)}` : '—'}
+              </p>
+              <p className="text-xs text-muted mt-0.5">avg accumulation rate</p>
+            </div>
+            <div className="sm:border-l sm:border-border sm:pl-4">
+              <p className="text-xs text-muted mb-1">Unrealized P&amp;L</p>
+              <p className={`text-base font-semibold ${unrealizedPnlUsd >= 0 ? 'text-accent' : 'text-red-400'}`}>
+                {costBasisUsd > 0 ? `${unrealizedPnlUsd >= 0 ? '+' : ''}${formatUSD(unrealizedPnlUsd)}` : '—'}
+              </p>
+              <p className="text-xs text-muted font-mono mt-0.5">
+                {costBasisUsd > 0 ? `vs ${formatUSD(costBasisUsd)} cost basis` : 'vs ETH invested'}
+              </p>
+            </div>
+          </div>
+        )}
 
         {/* BSTR metrics */}
         <div className="grid grid-cols-2 gap-4 mb-4">

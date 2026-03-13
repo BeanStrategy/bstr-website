@@ -260,13 +260,13 @@ export default async function StakingPage({
                       {isCapital && ethSpent > 0 ? (
                         <>
                           <span className="text-sm font-mono text-white">
-                            {ethSpent.toFixed(4)} ETH → {beanAmount.toFixed(6)} BEAN
+                            {ethSpent.toFixed(4)} ETH → {formatBEAN(beanAmount, 4)} BEAN
                           </span>
                           <span className="text-xs text-muted font-mono">{beanPerEth.toFixed(2)} BEAN/ETH</span>
                         </>
                       ) : (
                         amount && (
-                          <span className="text-sm font-mono text-white inline-flex items-center gap-1">{amount} <BeanIcon size={14} /></span>
+                          <span className="text-sm font-mono text-white inline-flex items-center gap-1">{formatBEAN(parseFloat(amount), 4)} <BeanIcon size={14} /></span>
                         )
                       )}
                     </div>

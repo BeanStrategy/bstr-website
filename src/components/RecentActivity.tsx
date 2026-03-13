@@ -1,5 +1,5 @@
 import type { HistoryItem, BurnEvent } from '@/types'
-import { timeAgo } from '@/lib/utils'
+import { timeAgo, formatBEAN } from '@/lib/utils'
 
 const EVENT_LABELS: Record<string, { label: string; color: string }> = {
   genesis: { label: 'Capital Injected', color: 'text-[#0052ff]' },
@@ -77,12 +77,12 @@ export default function RecentActivity({ history, burnHistory = [] }: RecentActi
                   {isCapital && ethSpent > 0 ? (
                     <>
                       <span className="text-xs text-muted font-mono">
-                        {ethSpent.toFixed(4)} ETH → {beanAmount.toFixed(4)} BEAN
+                        {ethSpent.toFixed(4)} ETH → {formatBEAN(beanAmount, 4)} BEAN
                       </span>
                       <span className="text-xs text-muted font-mono">{beanPerEth.toFixed(2)} BEAN/ETH</span>
                     </>
                   ) : (
-                    amount && <span className="text-xs text-muted font-mono">{amount}</span>
+                    amount && <span className="text-xs text-muted font-mono">{formatBEAN(parseFloat(amount), 4)}</span>
                   )}
                 </div>
                 <span className="text-xs text-muted">{timeAgo(item.data.timestamp)}</span>
