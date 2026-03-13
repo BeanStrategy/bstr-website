@@ -158,7 +158,7 @@ export default async function HistoryPage() {
             )}
           </div>
 
-          <div className="card p-5">
+          <div className="card p-5 flex flex-col justify-between">
             <p className="text-muted text-sm mb-1">BEAN Price</p>
             <div className="flex items-baseline gap-2 mb-3">
               <p className="stat-number text-2xl font-bold">{formatUSD(beanPriceUsd)}</p>
