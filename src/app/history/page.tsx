@@ -115,67 +115,66 @@ export default async function HistoryPage() {
         </div>
 
         {/* Summary */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-8">
-          <div className="card p-5">
-            <p className="text-muted text-sm mb-1">BEAN Staked</p>
-            <p className="stat-number text-2xl font-bold text-[#0052ff] flex items-center gap-2 mb-1">
-              {formatBEAN(stakedBean)} <BeanIcon size={20} />
-            </p>
-            <p className="text-muted text-sm mb-3">{formatUSD(stakedBean * beanPriceUsd)}</p>
-            <div className="grid grid-cols-3 gap-3 border-t border-border pt-3">
-              <div>
-                <p className="text-xs text-muted mb-0.5">Capital</p>
-                <p className="text-xs font-mono">{formatBEAN(totalCapital)}</p>
-              </div>
-              <div>
-                <p className="text-xs text-muted mb-0.5">Yield</p>
-                <p className="text-xs font-mono text-accent">
-                  {earnedBean > 0 ? `+${formatBEAN(earnedBean)}` : '—'}
-                </p>
-              </div>
-              <div>
-                <p className="text-xs text-muted mb-0.5">P&amp;L</p>
-                <p className={`text-xs font-mono ${unrealizedPnlUsd >= 0 ? 'text-accent' : 'text-red-400'}`}>
-                  {totalCostBasisUsd > 0
-                    ? `${unrealizedPnlUsd >= 0 ? '+' : ''}${formatUSD(unrealizedPnlUsd)}`
-                    : '—'}
-                </p>
-              </div>
-            </div>
-            {(avgBeanPerEth > 0 || pendingBean > 0) && (
-              <div className="flex flex-wrap gap-x-4 mt-2 pt-2 border-t border-border/50">
-                {avgBeanPerEth > 0 && (
-                  <p className="text-xs text-muted font-mono">
-                    avg {avgBeanPerEth.toFixed(2)} BEAN/ETH · {totalEthInvested.toFixed(4)} ETH in
+        <div className="card p-6 mb-8">
+          <div className="flex flex-col md:flex-row gap-6">
+            {/* Left: BEAN position */}
+            <div className="flex-1 min-w-0">
+              <p className="text-muted text-sm mb-1">BEAN Staked</p>
+              <p className="stat-number text-2xl font-bold text-[#0052ff] flex items-center gap-2 mb-1">
+                {formatBEAN(stakedBean)} <BeanIcon size={20} />
+              </p>
+              <p className="text-muted text-sm mb-4">{formatUSD(stakedBean * beanPriceUsd)}</p>
+              <div className="grid grid-cols-3 gap-4 border-t border-border pt-3">
+                <div>
+                  <p className="text-xs text-muted mb-0.5">Capital</p>
+                  <p className="text-sm font-mono">{formatBEAN(totalCapital)}</p>
+                </div>
+                <div>
+                  <p className="text-xs text-muted mb-0.5">Yield</p>
+                  <p className="text-sm font-mono text-accent">
+                    {earnedBean > 0 ? `+${formatBEAN(earnedBean)}` : '—'}
                   </p>
-                )}
-                {pendingBean > 0 && (
-                  <p className="text-xs font-mono text-yellow-400/70">
-                    ~{formatBEAN(pendingBean)} pending
+                </div>
+                <div>
+                  <p className="text-xs text-muted mb-0.5">P&amp;L</p>
+                  <p className={`text-sm font-mono ${unrealizedPnlUsd >= 0 ? 'text-accent' : 'text-red-400'}`}>
+                    {totalCostBasisUsd > 0
+                      ? `${unrealizedPnlUsd >= 0 ? '+' : ''}${formatUSD(unrealizedPnlUsd)}`
+                      : '—'}
                   </p>
-                )}
+                </div>
               </div>
-            )}
-          </div>
-
-          <div className="card p-5 flex flex-col justify-between">
-            <p className="text-muted text-sm mb-1">BEAN Price</p>
-            <div className="flex items-baseline gap-2 mb-3">
-              <p className="stat-number text-2xl font-bold">{formatUSD(beanPriceUsd)}</p>
-              {priceChange24h !== 0 && (
-                <span className={`text-sm font-medium ${priceChange24h >= 0 ? 'text-accent' : 'text-red-400'}`}>
-                  {priceChange24h >= 0 ? '+' : ''}{priceChange24h.toFixed(2)}% 24h
-                </span>
+              {(avgBeanPerEth > 0 || pendingBean > 0) && (
+                <p className="text-xs text-muted font-mono mt-3">
+                  {avgBeanPerEth > 0 && `avg ${avgBeanPerEth.toFixed(2)} BEAN/ETH · ${totalEthInvested.toFixed(4)} ETH in`}
+                  {pendingBean > 0 && ` · ~${formatBEAN(pendingBean)} pending`}
+                </p>
               )}
             </div>
-            <div className="grid grid-cols-2 gap-3 border-t border-border pt-3">
-              <div>
-                <p className="text-xs text-muted mb-0.5">Vol 24h</p>
-                <p className="text-sm font-mono font-medium">{formatUSD(volume24h)}</p>
+
+            {/* Divider */}
+            <div className="hidden md:block w-px self-stretch bg-border/50" />
+
+            {/* Right: BEAN price */}
+            <div className="md:min-w-[200px] shrink-0">
+              <p className="text-muted text-sm mb-1">BEAN Price</p>
+              <div className="flex items-baseline gap-2 mb-4">
+                <p className="stat-number text-2xl font-bold">{formatUSD(beanPriceUsd)}</p>
+                {priceChange24h !== 0 && (
+                  <span className={`text-sm font-medium ${priceChange24h >= 0 ? 'text-accent' : 'text-red-400'}`}>
+                    {priceChange24h >= 0 ? '+' : ''}{priceChange24h.toFixed(2)}% 24h
+                  </span>
+                )}
               </div>
-              <div>
-                <p className="text-xs text-muted mb-0.5">Liquidity</p>
-                <p className="text-sm font-mono font-medium">{formatUSD(liquidity)}</p>
+              <div className="grid grid-cols-2 gap-4 border-t border-border pt-3">
+                <div>
+                  <p className="text-xs text-muted mb-0.5">Vol 24h</p>
+                  <p className="text-sm font-mono font-medium">{formatUSD(volume24h)}</p>
+                </div>
+                <div>
+                  <p className="text-xs text-muted mb-0.5">Liquidity</p>
+                  <p className="text-sm font-mono font-medium">{formatUSD(liquidity)}</p>
+                </div>
               </div>
             </div>
           </div>
