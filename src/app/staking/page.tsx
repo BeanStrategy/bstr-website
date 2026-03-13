@@ -94,6 +94,11 @@ export default async function StakingPage({
   const compoundCount = allStakingEvents
     .filter((e) => e.type === 'yieldCompounded' || e.type === 'yieldClaimed').length
 
+  const capitalEvents = allStakingEvents.filter((e) => e.type === 'genesis' || e.type === 'stakeDeposited')
+  const totalEthInvested = capitalEvents.reduce((sum, e) => sum + parseFloat(e.sourceAmount ?? '0'), 0)
+  const totalCapitalBean = capitalEvents.reduce((sum, e) => sum + parseFloat(e.amountFormatted ?? '0'), 0)
+  const avgBeanPerEth = totalEthInvested > 0 ? totalCapitalBean / totalEthInvested : 0
+
   return (
     <>
       <Header />
@@ -196,9 +201,16 @@ export default async function StakingPage({
           <div className="card p-5">
             <p className="text-muted text-sm mb-1">Capital Injections</p>
             <p className="stat-number text-2xl font-bold">
-              {allStakingEvents.filter((e) => e.type === 'stakeDeposited' || e.type === 'genesis').length}
+              {capitalEvents.length}
             </p>
-            <p className="text-muted text-sm">ETH → BEAN transactions</p>
+            {avgBeanPerEth > 0 ? (
+              <>
+                <p className="text-muted text-sm font-mono">{avgBeanPerEth.toFixed(2)} BEAN/ETH avg</p>
+                <p className="text-muted text-sm font-mono">{totalEthInvested.toFixed(4)} ETH invested</p>
+              </>
+            ) : (
+              <p className="text-muted text-sm">ETH → BEAN transactions</p>
+            )}
           </div>
         </div>
 
@@ -233,6 +245,10 @@ export default async function StakingPage({
               {pageEvents.map((item: HistoryItem, i: number) => {
                 const meta = EVENT_META[item.type] ?? { label: item.type, color: 'text-muted' }
                 const amount = item.beanRewardFormatted ?? item.amountFormatted
+                const isCapital = item.type === 'genesis' || item.type === 'stakeDeposited'
+                const ethSpent = isCapital && item.sourceAmount ? parseFloat(item.sourceAmount) : 0
+                const beanAmount = isCapital ? parseFloat(item.amountFormatted ?? '0') : 0
+                const beanPerEth = ethSpent > 0 ? beanAmount / ethSpent : 0
 
                 return (
                   <div
@@ -243,6 +259,12 @@ export default async function StakingPage({
                       <span className={`text-sm font-medium w-24 sm:w-28 ${meta.color}`}>{meta.label}</span>
                       {amount && (
                         <span className="text-sm font-mono text-white inline-flex items-center gap-1">{amount} <BeanIcon size={14} /></span>
+                      )}
+                      {isCapital && ethSpent > 0 && (
+                        <span className="text-xs text-muted font-mono">{ethSpent.toFixed(4)} ETH</span>
+                      )}
+                      {isCapital && beanPerEth > 0 && (
+                        <span className="text-xs text-muted font-mono">{beanPerEth.toFixed(2)} BEAN/ETH</span>
                       )}
                     </div>
                     <div className="flex items-center gap-3">
