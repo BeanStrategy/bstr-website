@@ -1,6 +1,6 @@
 import Link from 'next/link'
 import { fetchUserStaking, fetchStakingGlobalStats, fetchUserHistory, fetchBeanStats } from '@/lib/api'
-import { formatBEAN, formatUSD, timeAgo } from '@/lib/utils'
+import { formatBEAN, formatUSD, formatDate, timeAgo } from '@/lib/utils'
 import AutoRefresh from '@/components/AutoRefresh'
 import BeanIcon from '@/components/BeanIcon'
 import Header from '@/components/Header'
@@ -11,7 +11,6 @@ export const revalidate = 60
 
 const AGENT_ADDRESS = process.env.NEXT_PUBLIC_AGENT_ADDRESS ?? ''
 const PAGE_SIZE = 25
-
 
 const STAKING_TYPES = ['genesis', 'stakeDeposited', 'feeReinvested', 'yieldCompounded', 'yieldClaimed', 'stakeWithdrawn']
 
@@ -37,6 +36,8 @@ const FILTER_LABELS: Record<string, string> = {
   fees: 'Fees',
   compounds: 'Compounds',
 }
+
+const isValidTxHash = (hash: string) => /^0x[0-9a-fA-F]{64}$/.test(hash)
 
 async function getStakingData() {
   const [userStaking, stakingGlobal, history, stats] = await Promise.allSettled([
@@ -72,7 +73,6 @@ export default async function StakingPage({
 
   const treasuryUsd = stakedBean * beanPriceUsd
   const dailyYield = stakedBean * (apr / 100) / 365
-  const weeklyYield = dailyYield * 7
   const annualYield = stakedBean * (apr / 100)
   const tvlSharePct = totalStaked > 0 ? (stakedBean / totalStaked) * 100 : 0
 
@@ -85,9 +85,7 @@ export default async function StakingPage({
   const currentPage = Math.min(page, totalPages)
   const pageEvents = filteredEvents.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE)
 
-  // Lifetime summary stats (always across all events)
-  // yieldCompounded = compound() path; yieldClaimed = claimYield()+deposit() fallback path
-  // Both represent yield reinvested into the position — count together
+  // Lifetime summary stats
   const totalCompounded = allStakingEvents
     .filter((e) => e.type === 'yieldCompounded' || e.type === 'yieldClaimed')
     .reduce((sum, e) => sum + parseFloat(e.amountFormatted ?? e.beanRewardFormatted ?? '0'), 0)
@@ -119,50 +117,62 @@ export default async function StakingPage({
 
         {/* Position hero */}
         <div className="card p-8 mb-6 border-accent/20">
-          <p className="text-muted text-sm mb-2">Current Position</p>
           {stakedBean > 0 ? (
-            <>
-              <p className="stat-number text-4xl md:text-5xl font-bold text-[#0052ff] mb-1 flex items-center gap-3">
-                {formatBEAN(stakedBean)} <BeanIcon size={36} />
-              </p>
-              <p className="text-muted text-lg md:text-xl mb-4">{formatUSD(treasuryUsd)}</p>
-              <div className="flex flex-wrap gap-x-6 gap-y-2 text-sm">
-                <span className="text-muted">
-                  Pending rewards:{' '}
-                  <span className="text-white font-mono inline-flex items-center gap-1">{formatBEAN(pendingRewards, 5)} <BeanIcon size={14} /></span>
-                </span>
-
-                <span className="text-muted">
-                  TVL share:{' '}
-                  <span className="text-white font-mono">{tvlSharePct.toFixed(3)}%</span>
-                </span>
+            <div className="flex flex-col md:flex-row md:items-center gap-8">
+              {/* Left: position */}
+              <div className="flex-1 min-w-0">
+                <p className="text-muted text-sm mb-2">BEAN Staked</p>
+                <p className="stat-number text-4xl md:text-5xl font-bold text-[#0052ff] mb-1 flex items-center gap-3">
+                  {formatBEAN(stakedBean)} <BeanIcon size={36} />
+                </p>
+                <p className="text-muted text-lg md:text-xl">{formatUSD(treasuryUsd)}</p>
               </div>
-            </>
+
+              {/* Divider */}
+              <div className="hidden md:block w-px self-stretch bg-border/50" />
+
+              {/* Right: APR + pending + TVL */}
+              <div className="flex flex-row md:flex-col gap-8 md:gap-5 md:min-w-[180px] shrink-0">
+                <div>
+                  <div className="flex items-center gap-2 mb-1">
+                    <p className="text-xs text-muted uppercase tracking-wide">Protocol APR</p>
+                    {apr > 0 && (
+                      <span className="text-xs text-accent border border-accent/40 bg-accent/5 px-2 py-0.5 rounded-full">
+                        Live
+                      </span>
+                    )}
+                  </div>
+                  <p className="text-3xl md:text-4xl font-bold text-accent">
+                    {apr > 0 ? `${apr.toFixed(0)}%` : '—'}
+                  </p>
+                  <p className="text-xs text-muted mt-0.5">Auto-compounding</p>
+                </div>
+                <div>
+                  <p className="text-xs text-muted uppercase tracking-wide mb-1">Pending Rewards</p>
+                  <p className="text-xl font-bold font-mono inline-flex items-center gap-1">
+                    {formatBEAN(pendingRewards, 5)} <BeanIcon size={16} />
+                  </p>
+                  <p className="text-xs text-muted mt-0.5">TVL share: {tvlSharePct.toFixed(3)}%</p>
+                </div>
+              </div>
+            </div>
           ) : (
             <div>
+              <p className="text-muted text-sm mb-2">BEAN Staked</p>
               <p className="stat-number text-5xl font-bold text-muted mb-2 flex items-center gap-3">0 <BeanIcon size={36} /></p>
-              <p className="text-muted">
-                Awaiting initial BEAN purchase and stake. Treasury not yet deployed.
-              </p>
+              <p className="text-muted">Awaiting initial BEAN purchase and stake.</p>
             </div>
           )}
         </div>
 
-        {/* Yield projections */}
+        {/* Stats — 4 cards */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
           <div className="card p-5">
             <p className="text-muted text-sm mb-1">Daily Yield</p>
-            <p className="stat-number text-2xl font-bold text-[#0052ff]">
+            <p className="stat-number text-2xl font-bold">
               {stakedBean > 0 ? `+${dailyYield.toFixed(3)}` : '—'}
             </p>
             <p className="text-muted text-sm flex items-center gap-1"><BeanIcon size={14} /> / day</p>
-          </div>
-          <div className="card p-5">
-            <p className="text-muted text-sm mb-1">Weekly Yield</p>
-            <p className="stat-number text-2xl font-bold">
-              {stakedBean > 0 ? `+${weeklyYield.toFixed(2)}` : '—'}
-            </p>
-            <p className="text-muted text-sm flex items-center gap-1"><BeanIcon size={14} /> / week</p>
           </div>
           <div className="card p-5">
             <p className="text-muted text-sm mb-1">Annual Projection</p>
@@ -174,40 +184,24 @@ export default async function StakingPage({
             </p>
           </div>
           <div className="card p-5">
-            <p className="text-muted text-sm mb-1">Protocol APR</p>
-            <p className="stat-number text-2xl font-bold text-accent">
-              {apr > 0 ? `${apr.toFixed(0)}%` : '—'}
-            </p>
-            <p className="text-muted text-sm">{formatUSD(stakingGlobal?.tvlUsd ?? 0)} TVL</p>
-          </div>
-        </div>
-
-        {/* Lifetime staking stats */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
-          <div className="card p-5">
             <p className="text-muted text-sm mb-1">Total Compounded</p>
-            <p className="stat-number text-2xl font-bold text-purple-400 flex items-center gap-2">
-              {totalCompounded > 0 ? `+${formatBEAN(totalCompounded)}` : '—'} <BeanIcon size={20} />
+            <p className="stat-number text-2xl font-bold text-accent flex items-center gap-2">
+              {totalCompounded > 0 ? `+${formatBEAN(totalCompounded)}` : '—'} <BeanIcon size={18} />
             </p>
-            <p className="text-muted text-sm">{compoundCount} compound events</p>
+            <p className="text-muted text-sm">
+              {totalCompounded > 0 ? `${formatUSD(totalCompounded * beanPriceUsd)} · ` : ''}{compoundCount} events
+            </p>
           </div>
           <div className="card p-5">
-            <p className="text-muted text-sm mb-1">Yield at Current Price</p>
-            <p className="stat-number text-2xl font-bold text-[#0052ff]">
-              {totalCompounded > 0 ? formatUSD(totalCompounded * beanPriceUsd) : '—'}
-            </p>
-            <p className="text-muted text-sm">{compoundCount} yield events</p>
-          </div>
-          <div className="card p-5">
-            <p className="text-muted text-sm mb-1">Capital Injections</p>
+            <p className="text-muted text-sm mb-1">Capital Deployed</p>
             <p className="stat-number text-2xl font-bold">
-              {capitalEvents.length}
+              {totalCapitalBean > 0 ? formatBEAN(totalCapitalBean, 4) : '—'}
             </p>
             {avgBeanPerEth > 0 ? (
-              <>
-                <p className="text-muted text-sm font-mono">{avgBeanPerEth.toFixed(2)} BEAN/ETH avg</p>
-                <p className="text-muted text-sm font-mono">{totalEthInvested.toFixed(4)} ETH invested</p>
-              </>
+              <p className="text-muted text-sm font-mono">
+                {capitalEvents.length} inj · {totalEthInvested.toFixed(4)} ETH
+                <br />avg {avgBeanPerEth.toFixed(2)} BEAN/ETH
+              </p>
             ) : (
               <p className="text-muted text-sm">ETH → BEAN transactions</p>
             )}
@@ -266,13 +260,16 @@ export default async function StakingPage({
                         </>
                       ) : (
                         amount && (
-                          <span className="text-sm font-mono text-white inline-flex items-center gap-1">{formatBEAN(parseFloat(amount), 4)} <BeanIcon size={14} /></span>
+                          <span className="text-sm font-mono text-white inline-flex items-center gap-1">
+                            {formatBEAN(parseFloat(amount), 4)} <BeanIcon size={14} />
+                          </span>
                         )
                       )}
                     </div>
-                    <div className="flex items-center gap-3">
-                      <span className="text-xs text-muted">{timeAgo(item.timestamp)}</span>
-                      {item.txHash && (
+                    <div className="flex flex-col items-end gap-0.5">
+                      <span className="text-xs text-muted">{formatDate(item.timestamp)}</span>
+                      <span className="text-xs text-muted/50">{timeAgo(item.timestamp)}</span>
+                      {item.txHash && isValidTxHash(item.txHash) && (
                         <a
                           href={`https://basescan.org/tx/${item.txHash}`}
                           target="_blank"
