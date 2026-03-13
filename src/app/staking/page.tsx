@@ -201,19 +201,17 @@ export default async function StakingPage({
             </p>
           </div>
           <div className="card p-5">
-            <p className="text-muted text-sm mb-1">Capital Deployed</p>
+            <p className="text-muted text-sm mb-1">Cost Basis</p>
             <p className="stat-number text-2xl font-bold">
-              {totalCapitalBean > 0 ? formatBEAN(totalCapitalBean, 4) : '—'}
+              {totalCostBasisUsd > 0 ? formatUSD(totalCostBasisUsd) : '—'}
             </p>
-            {avgBeanPerEth > 0 ? (
+            {totalCostBasisUsd > 0 ? (
               <>
-                <p className="text-muted text-sm font-mono">
-                  {capitalEvents.length} injections · {totalEthInvested.toFixed(4)} ETH
+                <p className="text-muted text-sm">
+                  {formatUSD(stakedBean * beanPriceUsd)} current value
                 </p>
                 <p className={`text-sm font-mono mt-0.5 ${unrealizedPnlUsd >= 0 ? 'text-accent' : 'text-red-400'}`}>
-                  {totalCostBasisUsd > 0
-                    ? `${unrealizedPnlUsd >= 0 ? '+' : ''}${formatUSD(unrealizedPnlUsd)} P&L`
-                    : `avg ${avgBeanPerEth.toFixed(2)} BEAN/ETH`}
+                  {unrealizedPnlUsd >= 0 ? '+' : ''}{formatUSD(unrealizedPnlUsd)} P&amp;L
                 </p>
               </>
             ) : (
