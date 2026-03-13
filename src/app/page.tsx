@@ -93,6 +93,11 @@ export default async function HomePage() {
   const treasuryUsd = beanUsd // keep for legacy references
   const apr = Number(stakingGlobal?.apr ?? 0)
 
+  const capitalEvents = history.filter((e: HistoryItem) => e.type === 'genesis' || e.type === 'stakeDeposited')
+  const totalEthInvested = capitalEvents.reduce((sum: number, e: HistoryItem) => sum + parseFloat(e.sourceAmount ?? '0'), 0)
+  const totalCapitalBean = capitalEvents.reduce((sum: number, e: HistoryItem) => sum + parseFloat(e.amountFormatted ?? '0'), 0)
+  const avgBeanPerEth = totalEthInvested > 0 ? totalCapitalBean / totalEthInvested : 0
+
   const bstrCirculating = bstrTotalSupply > 0 ? bstrTotalSupply - bstrBurned : 0
   const navPerBstrUsd = bstrCirculating > 0 ? treasuryUsd / bstrCirculating : 0
   const hasBstr = BSTR_ADDRESS !== ''
@@ -182,6 +187,11 @@ export default async function HomePage() {
               {formatBEAN(stakedBean)} staked
               {beanWalletBalance > 0 && ` + ${formatBEAN(beanWalletBalance)} wallet`}
             </p>
+            {avgBeanPerEth > 0 && (
+              <p className="text-xs text-muted font-mono mt-1">
+                avg {avgBeanPerEth.toFixed(2)} BEAN/ETH · {totalEthInvested.toFixed(4)} ETH invested
+              </p>
+            )}
           </div>
           <div className="sm:border-l sm:border-border sm:pl-4">
             <p className="text-xs text-muted mb-1">ETH{wethBalance > 0 ? ' + WETH' : ''} (reserve)</p>

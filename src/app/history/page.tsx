@@ -67,9 +67,10 @@ export default async function HistoryPage() {
   } catch {}
 
   // Capital = all BEAN purchased with ETH (genesis + subsequent purchases)
-  const totalCapital = history
-    .filter(e => e.type === 'genesis' || e.type === 'stakeDeposited')
-    .reduce((sum, e) => sum + parseFloat(e.amountFormatted ?? '0'), 0)
+  const capitalEvents = history.filter(e => e.type === 'genesis' || e.type === 'stakeDeposited')
+  const totalCapital = capitalEvents.reduce((sum, e) => sum + parseFloat(e.amountFormatted ?? '0'), 0)
+  const totalEthInvested = capitalEvents.reduce((sum, e) => sum + parseFloat(e.sourceAmount ?? '0'), 0)
+  const avgBeanPerEth = totalEthInvested > 0 ? totalCapital / totalEthInvested : 0
   // Yield = BEAN earned via compounding
   const totalYield = history
     .filter(e => e.type === 'yieldCompounded' || e.type === 'yieldClaimed')
@@ -122,6 +123,18 @@ export default async function HistoryPage() {
                   <span className="font-mono">{formatBEAN(pendingBean)}</span>
                 </p>
               )}
+              {avgBeanPerEth > 0 && (
+                <p className="text-xs text-muted border-t border-border/50 pt-1 mt-1">
+                  <span className="text-white/60">Avg cost</span>{' '}
+                  <span className="font-mono">{avgBeanPerEth.toFixed(2)} BEAN/ETH</span>
+                </p>
+              )}
+              {totalEthInvested > 0 && (
+                <p className="text-xs text-muted">
+                  <span className="text-white/60">ETH invested</span>{' '}
+                  <span className="font-mono">{totalEthInvested.toFixed(4)} ETH</span>
+                </p>
+              )}
             </div>
           </div>
           <div className="card p-5">
@@ -167,6 +180,11 @@ export default async function HistoryPage() {
                 const amount =
                   item.beanRewardFormatted ?? item.ethRewardFormatted ?? item.amountFormatted
 
+                const isCapital = item.type === 'genesis' || item.type === 'stakeDeposited'
+                const ethSpent = isCapital && item.sourceAmount ? parseFloat(item.sourceAmount) : 0
+                const beanAmount = isCapital ? parseFloat(item.amountFormatted ?? '0') : 0
+                const beanPerEth = ethSpent > 0 ? beanAmount / ethSpent : 0
+
                 return (
                   <div
                     key={i}
@@ -178,6 +196,12 @@ export default async function HistoryPage() {
                       </span>
                       {amount && (
                         <span className="text-sm font-mono text-white">{amount}</span>
+                      )}
+                      {isCapital && ethSpent > 0 && (
+                        <span className="text-xs text-muted font-mono">{ethSpent.toFixed(4)} ETH</span>
+                      )}
+                      {isCapital && beanPerEth > 0 && (
+                        <span className="text-xs text-muted font-mono">{beanPerEth.toFixed(2)} BEAN/ETH</span>
                       )}
                       {item.roundId && (
                         <span className="hidden sm:block text-xs text-muted">Round #{item.roundId}</span>
