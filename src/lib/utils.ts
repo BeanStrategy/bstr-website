@@ -25,6 +25,14 @@ export function formatPercent(value: number, showSign = true): string {
   return `${sign}${num.toFixed(2)}%`
 }
 
+export function formatDate(timestamp: number): string {
+  return new Date(timestamp * 1000).toLocaleDateString('en-US', {
+    month: 'short',
+    day: 'numeric',
+    year: 'numeric',
+  })
+}
+
 export function timeAgo(timestamp: number): string {
   const diff = Math.floor(Date.now() / 1000) - timestamp
   if (diff < 60) return `${diff}s ago`

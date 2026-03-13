@@ -1,6 +1,6 @@
 import { fetchUserHistory, fetchBeanStats, fetchUserStaking } from '@/lib/api'
 import { fetchBstrBurned, fetchBurnHistory } from '@/lib/onchain'
-import { timeAgo, formatBEAN, formatUSD } from '@/lib/utils'
+import { timeAgo, formatDate, formatBEAN, formatUSD } from '@/lib/utils'
 import ChartWrapper from '@/components/ChartWrapper'
 import AutoRefresh from '@/components/AutoRefresh'
 import BeanIcon from '@/components/BeanIcon'
@@ -26,9 +26,12 @@ const EVENT_LABELS: Record<string, { label: string; color: string }> = {
   deployed: { label: 'Deployed', color: 'text-muted' },
 }
 
+const isValidTxHash = (hash: string) => /^0x[0-9a-fA-F]{64}$/.test(hash)
+
 export default async function HistoryPage() {
   let history: HistoryItem[] = []
   let beanPriceUsd = 0
+  let beanPriceNative = 0
   let priceChange24h = 0
   let volume24h = 0
   let liquidity = 0
@@ -51,8 +54,9 @@ export default async function HistoryPage() {
     const [h, s, st, b, bh] = await Promise.allSettled(fetches)
     if (h.status === 'fulfilled') history = h.value as HistoryItem[]
     if (s.status === 'fulfilled') {
-      const stats = s.value as { beanPriceUsd: number; priceChange24h: number; volume24h: number; liquidity: number }
+      const stats = s.value as { beanPriceUsd: number; beanPriceNative: number; priceChange24h: number; volume24h: number; liquidity: number }
       beanPriceUsd = stats.beanPriceUsd
+      beanPriceNative = stats.beanPriceNative
       priceChange24h = stats.priceChange24h
       volume24h = stats.volume24h
       liquidity = stats.liquidity
@@ -66,23 +70,37 @@ export default async function HistoryPage() {
     if (bh && bh.status === 'fulfilled') burnHistory = bh.value as BurnEvent[]
   } catch {}
 
+  const ethPrice = beanPriceNative > 0 ? beanPriceUsd / beanPriceNative : 0
+
   // Capital = all BEAN purchased with ETH (genesis + subsequent purchases)
   const capitalEvents = history.filter(e => e.type === 'genesis' || e.type === 'stakeDeposited')
   const totalCapital = capitalEvents.reduce((sum, e) => sum + parseFloat(e.amountFormatted ?? '0'), 0)
   const totalEthInvested = capitalEvents.reduce((sum, e) => sum + parseFloat(e.sourceAmount ?? '0'), 0)
   const avgBeanPerEth = totalEthInvested > 0 ? totalCapital / totalEthInvested : 0
+
+  // True cost basis: use stored USD value at purchase time when available
+  const totalCostBasisUsd = capitalEvents.reduce((sum, e) => {
+    if (e.sourceAmountUsd != null) return sum + e.sourceAmountUsd
+    return sum + parseFloat(e.sourceAmount ?? '0') * ethPrice
+  }, 0)
+  const unrealizedPnlUsd = totalCostBasisUsd > 0 ? stakedBean * beanPriceUsd - totalCostBasisUsd : 0
+
   // Yield = BEAN earned via compounding
-  const totalYield = history
+  const earnedBean = Math.max(0, history
     .filter(e => e.type === 'yieldCompounded' || e.type === 'yieldClaimed')
-    .reduce((sum, e) => sum + parseFloat(e.amountFormatted ?? e.beanRewardFormatted ?? '0'), 0)
-  const totalBeanEarned = stakedBean > 0 ? stakedBean : totalCapital
-  const earnedBean = Math.max(0, totalYield)
+    .reduce((sum, e) => sum + parseFloat(e.amountFormatted ?? e.beanRewardFormatted ?? '0'), 0))
+
   // Fee flywheel — BEAN accumulated from BSTR trading fees
   const feeEvents = history
     .filter(e => e.type === 'feeReinvested')
     .sort((a, b) => b.timestamp - a.timestamp)
   const totalFeeBean = feeEvents.reduce((sum, e) => sum + parseFloat(e.amountFormatted ?? '0'), 0)
   const totalFeeWeth = feeEvents.reduce((sum, e) => sum + parseFloat(e.sourceAmount ?? '0'), 0)
+
+  // Main event log: newest-first, feeReinvested excluded (shown in flywheel section below)
+  const mainEvents = [...history]
+    .sort((a, b) => b.timestamp - a.timestamp)
+    .filter(e => e.type !== 'feeReinvested')
 
   return (
     <>
@@ -98,45 +116,48 @@ export default async function HistoryPage() {
 
         {/* Summary */}
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-8">
-          <div className="card p-5 flex items-center justify-between gap-4">
-            <div className="min-w-0">
-              <p className="text-muted text-sm mb-1">Total BEAN Held</p>
-              <p className="stat-number text-2xl font-bold text-[#0052ff] flex items-center gap-2">
-                {formatBEAN(totalBeanEarned)} <BeanIcon size={20} />
-              </p>
-              <p className="text-muted text-sm">{formatUSD(totalBeanEarned * beanPriceUsd)}</p>
+          <div className="card p-5">
+            <p className="text-muted text-sm mb-1">BEAN Staked</p>
+            <p className="stat-number text-2xl font-bold text-[#0052ff] flex items-center gap-2 mb-1">
+              {formatBEAN(stakedBean)} <BeanIcon size={20} />
+            </p>
+            <p className="text-muted text-sm mb-3">{formatUSD(stakedBean * beanPriceUsd)}</p>
+            <div className="grid grid-cols-3 gap-3 border-t border-border pt-3">
+              <div>
+                <p className="text-xs text-muted mb-0.5">Capital</p>
+                <p className="text-xs font-mono">{formatBEAN(totalCapital)}</p>
+              </div>
+              <div>
+                <p className="text-xs text-muted mb-0.5">Yield</p>
+                <p className="text-xs font-mono text-accent">
+                  {earnedBean > 0 ? `+${formatBEAN(earnedBean)}` : '—'}
+                </p>
+              </div>
+              <div>
+                <p className="text-xs text-muted mb-0.5">P&amp;L</p>
+                <p className={`text-xs font-mono ${unrealizedPnlUsd >= 0 ? 'text-accent' : 'text-red-400'}`}>
+                  {totalCostBasisUsd > 0
+                    ? `${unrealizedPnlUsd >= 0 ? '+' : ''}${formatUSD(unrealizedPnlUsd)}`
+                    : '—'}
+                </p>
+              </div>
             </div>
-            <div className="text-right flex flex-col gap-1 shrink-0">
-              <p className="text-xs text-muted">
-                <span className="text-white/60">Capital</span>{' '}
-                <span className="font-mono">{formatBEAN(totalCapital)}</span>
-              </p>
-              {earnedBean > 0 && (
-                <p className="text-xs text-muted">
-                  <span className="text-accent">+ Yield</span>{' '}
-                  <span className="font-mono">{formatBEAN(earnedBean)}</span>
-                </p>
-              )}
-              {pendingBean > 0 && (
-                <p className="text-xs text-muted">
-                  <span className="text-yellow-400/70">~ Pending</span>{' '}
-                  <span className="font-mono">{formatBEAN(pendingBean)}</span>
-                </p>
-              )}
-              {avgBeanPerEth > 0 && (
-                <p className="text-xs text-muted border-t border-border/50 pt-1 mt-1">
-                  <span className="text-white/60">Avg cost</span>{' '}
-                  <span className="font-mono">{avgBeanPerEth.toFixed(2)} BEAN/ETH</span>
-                </p>
-              )}
-              {totalEthInvested > 0 && (
-                <p className="text-xs text-muted">
-                  <span className="text-white/60">ETH invested</span>{' '}
-                  <span className="font-mono">{totalEthInvested.toFixed(4)} ETH</span>
-                </p>
-              )}
-            </div>
+            {(avgBeanPerEth > 0 || pendingBean > 0) && (
+              <div className="flex flex-wrap gap-x-4 mt-2 pt-2 border-t border-border/50">
+                {avgBeanPerEth > 0 && (
+                  <p className="text-xs text-muted font-mono">
+                    avg {avgBeanPerEth.toFixed(2)} BEAN/ETH · {totalEthInvested.toFixed(4)} ETH in
+                  </p>
+                )}
+                {pendingBean > 0 && (
+                  <p className="text-xs font-mono text-yellow-400/70">
+                    ~{formatBEAN(pendingBean)} pending
+                  </p>
+                )}
+              </div>
+            )}
           </div>
+
           <div className="card p-5">
             <p className="text-muted text-sm mb-1">BEAN Price</p>
             <div className="flex items-baseline gap-2 mb-3">
@@ -162,20 +183,20 @@ export default async function HistoryPage() {
 
         {/* Chart */}
         <div className="card p-6 mb-8">
-          <h3 className="font-semibold mb-4">Cumulative BEAN Accumulated</h3>
+          <h3 className="font-semibold mb-4">Cumulative BEAN</h3>
           <ChartWrapper history={history} height={280} />
         </div>
 
-        {/* Full event log */}
+        {/* Event log */}
         <div className="card">
           <div className="p-6 border-b border-border">
             <h3 className="font-semibold">Event Log</h3>
           </div>
-          {history.length === 0 ? (
+          {mainEvents.length === 0 ? (
             <div className="p-8 text-center text-muted">No events yet.</div>
           ) : (
             <div className="divide-y divide-border">
-              {history.map((item, i) => {
+              {mainEvents.map((item, i) => {
                 const meta = EVENT_LABELS[item.type] ?? { label: item.type, color: 'text-muted' }
                 const amount =
                   item.beanRewardFormatted ?? item.ethRewardFormatted ?? item.amountFormatted
@@ -215,9 +236,10 @@ export default async function HistoryPage() {
                         <span className="hidden sm:block text-xs text-muted">Round #{item.roundId}</span>
                       )}
                     </div>
-                    <div className="flex items-center gap-4">
-                      <span className="text-xs text-muted">{timeAgo(item.timestamp)}</span>
-                      {item.txHash && (
+                    <div className="flex flex-col items-end gap-0.5">
+                      <span className="text-xs text-muted">{formatDate(item.timestamp)}</span>
+                      <span className="text-xs text-muted/50">{timeAgo(item.timestamp)}</span>
+                      {item.txHash && isValidTxHash(item.txHash) && (
                         <a
                           href={`https://basescan.org/tx/${item.txHash}`}
                           target="_blank"
@@ -234,6 +256,7 @@ export default async function HistoryPage() {
             </div>
           )}
         </div>
+
         {/* Trading Fee Flywheel */}
         <div className="card mt-8">
           <div className="p-6 border-b border-border flex items-center justify-between">
@@ -252,25 +275,10 @@ export default async function HistoryPage() {
           </div>
 
           {!BSTR_ADDRESS ? (
-            <div className="p-8">
-              <p className="text-muted text-sm mb-4">
-                Fee collection activates after BSTR token launch. Every time BSTR trades, fees accumulate
-                as WETH — the agent collects and splits them automatically every 6 hours.
+            <div className="p-6">
+              <p className="text-muted text-sm">
+                Fee collection activates after BSTR token launch — WETH fees will be split 80% BEAN / 20% BSTR burn automatically.
               </p>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
-                <div className="bg-card/50 rounded-lg p-4 border border-border">
-                  <p className="text-muted mb-1">Frequency</p>
-                  <p className="font-medium">Every 6 hours</p>
-                </div>
-                <div className="bg-card/50 rounded-lg p-4 border border-border">
-                  <p className="text-muted mb-1">80% — BEAN</p>
-                  <p className="font-medium">WETH → BEAN → staked</p>
-                </div>
-                <div className="bg-card/50 rounded-lg p-4 border border-border">
-                  <p className="text-muted mb-1">20% — BSTR burn</p>
-                  <p className="font-medium">WETH → buy BSTR → burn</p>
-                </div>
-              </div>
             </div>
           ) : feeEvents.length === 0 && burnHistory.length === 0 ? (
             <div className="p-8 text-center text-muted text-sm">No fee-collect events yet.</div>
@@ -282,16 +290,19 @@ export default async function HistoryPage() {
                     <div key={i} className="px-6 py-4 flex items-center justify-between hover:bg-card/50 transition-colors">
                       <div className="flex items-center gap-4">
                         <span className="text-sm font-medium text-accent w-28">Fees → BEAN</span>
-                        <span className="text-sm font-mono text-white inline-flex items-center gap-1">+{formatBEAN(parseFloat(item.amountFormatted ?? '0'), 4)} <BeanIcon size={14} /></span>
+                        <span className="text-sm font-mono text-white inline-flex items-center gap-1">
+                          +{formatBEAN(parseFloat(item.amountFormatted ?? '0'), 4)} <BeanIcon size={14} />
+                        </span>
                         {item.sourceAmount && (
                           <span className="hidden sm:block text-xs text-muted">
                             {parseFloat(item.sourceAmount).toFixed(4)} WETH
                           </span>
                         )}
                       </div>
-                      <div className="flex items-center gap-3">
-                        <span className="text-xs text-muted">{timeAgo(item.timestamp)}</span>
-                        {item.txHash && (
+                      <div className="flex flex-col items-end gap-0.5">
+                        <span className="text-xs text-muted">{formatDate(item.timestamp)}</span>
+                        <span className="text-xs text-muted/50">{timeAgo(item.timestamp)}</span>
+                        {item.txHash && isValidTxHash(item.txHash) && (
                           <a href={`https://basescan.org/tx/${item.txHash}`} target="_blank" rel="noopener noreferrer"
                             className="hidden sm:block text-xs text-muted hover:text-white font-mono">
                             {item.txHash.slice(0, 8)}…
@@ -318,12 +329,15 @@ export default async function HistoryPage() {
                             <span className="hidden sm:block text-xs text-muted">{event.ethSpent.toFixed(4)} WETH</span>
                           )}
                         </div>
-                        <div className="flex items-center gap-4">
-                          <span className="text-xs text-muted">{timeAgo(event.timestamp)}</span>
-                          <a href={`https://basescan.org/tx/${event.txHash}`} target="_blank" rel="noopener noreferrer"
-                            className="hidden sm:block text-xs text-muted hover:text-white font-mono">
-                            {event.txHash.slice(0, 8)}…
-                          </a>
+                        <div className="flex flex-col items-end gap-0.5">
+                          <span className="text-xs text-muted">{formatDate(event.timestamp)}</span>
+                          <span className="text-xs text-muted/50">{timeAgo(event.timestamp)}</span>
+                          {isValidTxHash(event.txHash) && (
+                            <a href={`https://basescan.org/tx/${event.txHash}`} target="_blank" rel="noopener noreferrer"
+                              className="hidden sm:block text-xs text-muted hover:text-white font-mono">
+                              {event.txHash.slice(0, 8)}…
+                            </a>
+                          )}
                         </div>
                       </div>
                     ))}
