@@ -7,6 +7,7 @@ const NAV_LINKS = [
   { href: '/history', label: 'History' },
   { href: '/staking', label: 'Staking' },
   { href: '/mining', label: 'Mining' },
+  { href: '/about', label: 'About' },
 ]
 
 export default function Header() {
