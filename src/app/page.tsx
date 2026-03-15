@@ -136,6 +136,26 @@ export default async function HomePage() {
           </p>
         </div>
 
+        {/* Pre-launch banner — hidden once BSTR is deployed */}
+        {!hasBstr && (
+          <div className="card p-5 mb-8 border-orange-400/30 bg-orange-400/5">
+            <div className="flex flex-col sm:flex-row sm:items-center gap-3">
+              <div className="flex-1">
+                <p className="text-sm font-semibold text-orange-400 mb-1">BSTR Token — Coming Soon</p>
+                <p className="text-sm text-muted">
+                  The BSTR token launches on Base via Bankr. Trading fees will flow directly to this
+                  treasury — buying BEAN and burning BSTR automatically. The flywheel is already running.
+                </p>
+              </div>
+              <div className="shrink-0">
+                <span className="text-xs text-orange-400/70 border border-orange-400/30 rounded-full px-3 py-1">
+                  Pre-launch
+                </span>
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* Primary stat — treasury */}
         <div className="card p-8 mb-6 border-accent/20">
           <div className="flex flex-col md:flex-row md:items-center gap-8">
